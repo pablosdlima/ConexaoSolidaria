@@ -33,8 +33,8 @@ dotnet build CampanhasAPI
 dotnet build DoacoesWorker
 
 # 3. Serviços, em terminais separados
-dotnet run --project CampanhasAPI/src/CampanhasAPI.Api
-dotnet run --project DoacoesWorker/src/DoacoesWorker.Worker
+dotnet run --project CampanhasAPI/src/CampanhasAPI.Api         # http://localhost:5080/swagger
+dotnet run --project DoacoesWorker/src/DoacoesWorker.Worker   # http://localhost:5090
 ```
 
 | Serviço | Endereço | Credenciais (dev) |
@@ -57,3 +57,21 @@ cd DoacoesWorker && docker compose up -d    # MongoDB + RabbitMQ
 
 > Os dois usam as mesmas portas do RabbitMQ — não suba ambos ao mesmo tempo.
 > Para rodar a solução inteira, use `Orchestration/`.
+
+## Fluxo de uma doação
+
+```
+Doador ──POST /api/doacoes──► CampanhasAPI ──DoacaoRecebidaEvent──► RabbitMQ ──► DoacoesWorker ──$inc──► MongoDB
+                                  │ grava Doacao (Pendente → Publicada)                │ ledger de idempotência
+                                  │ NÃO soma nada                                       ▼
+                                  ▼                                        GET /publico/campanhas
+                              202 Accepted                                 (Título, Meta, ValorTotalArrecadado)
+```
+
+| Papel | Endereço | Credenciais (dev) |
+|---|---|---|
+| CampanhasAPI (Swagger) | http://localhost:5080/swagger | gestor@esperancasolidaria.org / Gestor@123 |
+| DoacoesWorker — painel público | http://localhost:5090/publico/campanhas | — |
+| RabbitMQ UI | http://localhost:15672 | dev / dev |
+| PostgreSQL | localhost:5432 | dev / dev |
+| MongoDB | localhost:27017 | dev / dev |

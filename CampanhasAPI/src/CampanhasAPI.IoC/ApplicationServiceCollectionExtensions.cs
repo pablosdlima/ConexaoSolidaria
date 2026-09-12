@@ -18,6 +18,7 @@ public static class ApplicationServiceCollectionExtensions
         services.AddScoped<IUsuarioAppService, UsuarioAppService>();
         services.AddScoped<IAuthAppService, AuthAppService>();
         services.AddScoped<ICampanhaAppService, CampanhaAppService>();
+        services.AddScoped<IDoacaoAppService, DoacaoAppService>();
 
         services.AddSingleton<ISenhaHasher, BCryptSenhaHasher>();
         services.AddSingleton<IJwtGenerator, JwtGenerator>();

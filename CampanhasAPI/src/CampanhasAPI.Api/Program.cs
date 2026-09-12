@@ -13,12 +13,13 @@ builder.Services.AddSwaggerDocumentation();
 builder.Services.AddRepositories(builder.Configuration);
 builder.Services.AddDomainServices();
 builder.Services.AddApplicationServices(builder.Configuration);
-builder.Services.AddMessaging();
+builder.Services.AddRabbitMQMessaging(builder.Configuration);
 
 var app = builder.Build();
 
 // Auto-migrate + seed do GestorONG (padrao da Fase 3)
 await app.MigrateAndSeedAsync();
+await app.InitializeRabbitMQAsync();
 
 app.UseSwaggerDocumentation(); // sempre ligado: e a interface da demo
 app.UseMiddleware<ExceptionHandlingMiddleware>();
@@ -28,5 +29,6 @@ app.UseAuthorization();
 app.MapAuth();
 app.MapDoadores();
 app.MapCampanhas();
+app.MapDoacoes();
 
 app.Run();

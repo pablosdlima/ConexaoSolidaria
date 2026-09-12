@@ -10,6 +10,7 @@ public static class DomainServiceCollectionExtensions
     {
         services.AddScoped<IUsuarioService, UsuarioService>();
         services.AddScoped<ICampanhaService, CampanhaService>();
+        services.AddScoped<IDoacaoService, DoacaoService>();
         return services;
     }
 }
