@@ -5,6 +5,7 @@
 #   docker compose --profile app up -d    → infraestrutura + API + Worker (a partir da Fase 5)
 #
 #   CampanhasAPI:  http://localhost:5001/swagger
+#   DoacoesWorker: http://localhost:5002/publico/campanhas
 #   RabbitMQ UI:   http://localhost:15672   (dev / dev)
 #   PostgreSQL:    localhost:5432           (dev / dev)
 #   MongoDB:       localhost:27017          (dev / dev)
@@ -77,6 +78,7 @@ services:
       - "5001:8080"
     environment:
       ASPNETCORE_ENVIRONMENT: Development
+      Jwt__Key: "compose-dev-key-troque-no-kubernetes-via-secret-0123456789"
       ConnectionStrings__Campanhas: "Host=postgres;Database=campanhas;Username=dev;Password=dev"
       RabbitMQ__Host: rabbitmq
       RabbitMQ__Username: dev
@@ -94,8 +96,10 @@ services:
       dockerfile: dockerfile
     container_name: doacoes-worker
     restart: unless-stopped
+    ports:
+      - "5002:8080"
     environment:
-      DOTNET_ENVIRONMENT: Development
+      ASPNETCORE_ENVIRONMENT: Development
       MongoDB__ConnectionString: "mongodb://dev:dev@mongo:27017"
       MongoDB__DatabaseName: doacoes
       RabbitMQ__Host: rabbitmq

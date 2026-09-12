@@ -1,0 +1,31 @@
+# Contexto de build: a pasta CampanhasAPI/ (docker build -t campanhas-api .)
+# Multi-stage: o SDK compila, a imagem final leva so o runtime ASP.NET.
+
+# ---------- build ----------
+FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
+WORKDIR /src
+
+# Primeiro so os csproj: o restore fica em cache enquanto as dependencias nao mudarem
+COPY CampanhasAPI.slnx .
+COPY src/CampanhasAPI.Api/CampanhasAPI.Api.csproj                 src/CampanhasAPI.Api/
+COPY src/CampanhasAPI.Application/CampanhasAPI.Application.csproj src/CampanhasAPI.Application/
+COPY src/CampanhasAPI.Domain/CampanhasAPI.Domain.csproj           src/CampanhasAPI.Domain/
+COPY src/CampanhasAPI.Data/CampanhasAPI.Data.csproj               src/CampanhasAPI.Data/
+COPY src/CampanhasAPI.IoC/CampanhasAPI.IoC.csproj                 src/CampanhasAPI.IoC/
+COPY src/CampanhasAPI.Messaging/CampanhasAPI.Messaging.csproj     src/CampanhasAPI.Messaging/
+RUN dotnet restore CampanhasAPI.slnx
+
+# Agora o codigo
+COPY . .
+RUN dotnet publish src/CampanhasAPI.Api/CampanhasAPI.Api.csproj -c Release -o /app/publish --no-restore
+
+# ---------- final ----------
+FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS final
+WORKDIR /app
+COPY --from=build /app/publish .
+
+ENV ASPNETCORE_URLS=http://+:8080
+EXPOSE 8080
+USER app
+
+ENTRYPOINT ["dotnet", "CampanhasAPI.Api.dll"]

@@ -25,7 +25,12 @@ As decisões de arquitetura estão registradas em [`docs/decisoes/`](docs/deciso
 Pré-requisitos: .NET 10 SDK, Docker Desktop.
 
 ```bash
-# 1. Infraestrutura completa (RabbitMQ, PostgreSQL, MongoDB)
+# Opcao A — tudo em containers (e assim que a correcao deve rodar)
+docker compose -f Orchestration/docker-compose.yml --profile app up -d --build
+# CampanhasAPI: http://localhost:5001/swagger  ·  Painel: http://localhost:5002/publico/campanhas
+
+# Opcao B — infra em containers, servicos no dotnet run (desenvolvimento)
+# 1. Infraestrutura (RabbitMQ, PostgreSQL, MongoDB)
 docker compose -f Orchestration/docker-compose.yml up -d
 
 # 2. Build — cada serviço tem sua própria solution

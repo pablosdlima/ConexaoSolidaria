@@ -1,0 +1,30 @@
+# Contexto de build: a pasta DoacoesWorker/ (docker build -t doacoes-worker .)
+# O Worker tem um servidor HTTP minimo (painel publico, /health, /metrics),
+# por isso a imagem final e a aspnet, nao a runtime.
+
+# ---------- build ----------
+FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
+WORKDIR /src
+
+COPY DoacoesWorker.slnx .
+COPY src/DoacoesWorker.Worker/DoacoesWorker.Worker.csproj           src/DoacoesWorker.Worker/
+COPY src/DoacoesWorker.Application/DoacoesWorker.Application.csproj src/DoacoesWorker.Application/
+COPY src/DoacoesWorker.Domain/DoacoesWorker.Domain.csproj           src/DoacoesWorker.Domain/
+COPY src/DoacoesWorker.Data/DoacoesWorker.Data.csproj               src/DoacoesWorker.Data/
+COPY src/DoacoesWorker.IoC/DoacoesWorker.IoC.csproj                 src/DoacoesWorker.IoC/
+COPY src/DoacoesWorker.Messaging/DoacoesWorker.Messaging.csproj     src/DoacoesWorker.Messaging/
+RUN dotnet restore DoacoesWorker.slnx
+
+COPY . .
+RUN dotnet publish src/DoacoesWorker.Worker/DoacoesWorker.Worker.csproj -c Release -o /app/publish --no-restore
+
+# ---------- final ----------
+FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS final
+WORKDIR /app
+COPY --from=build /app/publish .
+
+ENV ASPNETCORE_URLS=http://+:8080
+EXPOSE 8080
+USER app
+
+ENTRYPOINT ["dotnet", "DoacoesWorker.Worker.dll"]
