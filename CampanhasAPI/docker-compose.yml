@@ -1,0 +1,44 @@
+# Dependências da CampanhasAPI para desenvolvimento isolado.
+# Para subir a solução inteira (API + Worker + infra), use ../Orchestration.
+#
+#   docker compose up -d
+#   PostgreSQL:   localhost:5432     (dev / dev, banco campanhas)
+#   RabbitMQ UI:  http://localhost:15672   (dev / dev)
+
+services:
+  postgres:
+    image: postgres:17
+    container_name: campanhas-postgres
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: dev
+      POSTGRES_PASSWORD: dev
+      POSTGRES_DB: campanhas
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U dev -d campanhas"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - campanhas-postgres-data:/var/lib/postgresql/data
+
+  rabbitmq:
+    image: rabbitmq:4-management
+    container_name: campanhas-rabbitmq
+    restart: unless-stopped
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: dev
+      RABBITMQ_DEFAULT_PASS: dev
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  campanhas-postgres-data:

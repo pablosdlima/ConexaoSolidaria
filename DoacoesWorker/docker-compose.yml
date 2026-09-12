@@ -1,0 +1,43 @@
+# Dependências do DoacoesWorker para desenvolvimento isolado.
+# Para subir a solução inteira (API + Worker + infra), use ../Orchestration.
+#
+#   docker compose up -d
+#   MongoDB:      localhost:27017   (dev / dev, banco doacoes)
+#   RabbitMQ UI:  http://localhost:15672   (dev / dev)
+
+services:
+  mongo:
+    image: mongo:8
+    container_name: doacoes-mongo
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: dev
+      MONGO_INITDB_ROOT_PASSWORD: dev
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.runCommand({ ping: 1 }).ok"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - doacoes-mongo-data:/data/db
+
+  rabbitmq:
+    image: rabbitmq:4-management
+    container_name: doacoes-rabbitmq
+    restart: unless-stopped
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: dev
+      RABBITMQ_DEFAULT_PASS: dev
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  doacoes-mongo-data:

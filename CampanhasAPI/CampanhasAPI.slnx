@@ -1,0 +1,10 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/CampanhasAPI.Api/CampanhasAPI.Api.csproj" />
+    <Project Path="src/CampanhasAPI.Application/CampanhasAPI.Application.csproj" />
+    <Project Path="src/CampanhasAPI.Data/CampanhasAPI.Data.csproj" />
+    <Project Path="src/CampanhasAPI.Domain/CampanhasAPI.Domain.csproj" />
+    <Project Path="src/CampanhasAPI.IoC/CampanhasAPI.IoC.csproj" />
+    <Project Path="src/CampanhasAPI.Messaging/CampanhasAPI.Messaging.csproj" />
+  </Folder>
+</Solution>

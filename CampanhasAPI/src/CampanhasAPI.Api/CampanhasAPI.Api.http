@@ -1,0 +1,6 @@
+@CampanhasAPI.Api_HostAddress = http://localhost:5183
+
+GET {{CampanhasAPI.Api_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

@@ -1,0 +1,112 @@
+# Solução completa: infraestrutura + os dois microsserviços.
+# É este arquivo que o README manda rodar para a correção.
+#
+#   docker compose up -d                  → só a infraestrutura
+#   docker compose --profile app up -d    → infraestrutura + API + Worker (a partir da Fase 5)
+#
+#   CampanhasAPI:  http://localhost:5001/swagger
+#   RabbitMQ UI:   http://localhost:15672   (dev / dev)
+#   PostgreSQL:    localhost:5432           (dev / dev)
+#   MongoDB:       localhost:27017          (dev / dev)
+
+services:
+
+  # ─── INFRAESTRUTURA ───────────────────────────────────────
+
+  rabbitmq:
+    image: rabbitmq:4-management
+    container_name: rabbitmq
+    restart: unless-stopped
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: dev
+      RABBITMQ_DEFAULT_PASS: dev
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  postgres:
+    image: postgres:17
+    container_name: postgres
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: dev
+      POSTGRES_PASSWORD: dev
+      POSTGRES_DB: campanhas
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U dev -d campanhas"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+
+  mongo:
+    image: mongo:8
+    container_name: mongo
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: dev
+      MONGO_INITDB_ROOT_PASSWORD: dev
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.runCommand({ ping: 1 }).ok"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - mongo-data:/data/db
+
+  # ─── MICROSSERVIÇOS (profile "app" — precisam dos dockerfiles da Fase 5) ───
+
+  campanhas-api:
+    profiles: ["app"]
+    build:
+      context: ../CampanhasAPI
+      dockerfile: dockerfile
+    container_name: campanhas-api
+    restart: unless-stopped
+    ports:
+      - "5001:8080"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ConnectionStrings__Campanhas: "Host=postgres;Database=campanhas;Username=dev;Password=dev"
+      RabbitMQ__Host: rabbitmq
+      RabbitMQ__Username: dev
+      RabbitMQ__Password: dev
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
+  doacoes-worker:
+    profiles: ["app"]
+    build:
+      context: ../DoacoesWorker
+      dockerfile: dockerfile
+    container_name: doacoes-worker
+    restart: unless-stopped
+    environment:
+      DOTNET_ENVIRONMENT: Development
+      MongoDB__ConnectionString: "mongodb://dev:dev@mongo:27017"
+      MongoDB__DatabaseName: doacoes
+      RabbitMQ__Host: rabbitmq
+      RabbitMQ__Username: dev
+      RabbitMQ__Password: dev
+    depends_on:
+      mongo:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
+volumes:
+  postgres-data:
+  mongo-data:

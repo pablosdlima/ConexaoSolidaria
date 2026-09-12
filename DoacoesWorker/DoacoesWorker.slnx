@@ -1,0 +1,10 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/DoacoesWorker.Application/DoacoesWorker.Application.csproj" />
+    <Project Path="src/DoacoesWorker.Data/DoacoesWorker.Data.csproj" />
+    <Project Path="src/DoacoesWorker.Domain/DoacoesWorker.Domain.csproj" />
+    <Project Path="src/DoacoesWorker.IoC/DoacoesWorker.IoC.csproj" />
+    <Project Path="src/DoacoesWorker.Messaging/DoacoesWorker.Messaging.csproj" />
+    <Project Path="src/DoacoesWorker.Worker/DoacoesWorker.Worker.csproj" />
+  </Folder>
+</Solution>
