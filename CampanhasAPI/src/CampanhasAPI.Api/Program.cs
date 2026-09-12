@@ -11,6 +11,7 @@ builder.Services.ConfigureHttpJsonOptions(o =>
 builder.Services.AddJwtAuthenticationConfig(builder.Configuration);
 builder.Services.AddSwaggerDocumentation();
 builder.Services.AddRepositories(builder.Configuration);
+builder.Services.AddDomainServices();
 builder.Services.AddApplicationServices(builder.Configuration);
 builder.Services.AddMessaging();
 
