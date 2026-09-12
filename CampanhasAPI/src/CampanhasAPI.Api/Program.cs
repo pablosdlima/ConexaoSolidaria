@@ -1,39 +1,31 @@
+using System.Text.Json.Serialization;
+using CampanhasAPI.Api.Endpoints;
+using CampanhasAPI.Api.Middleware;
+using CampanhasAPI.IoC;
+
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
-builder.Services.AddOpenApi();
+builder.Services.ConfigureHttpJsonOptions(o =>
+    o.SerializerOptions.Converters.Add(new JsonStringEnumConverter())); // enums como texto no JSON
+
+builder.Services.AddJwtAuthenticationConfig(builder.Configuration);
+builder.Services.AddSwaggerDocumentation();
+builder.Services.AddRepositories(builder.Configuration);
+builder.Services.AddApplicationServices(builder.Configuration);
+builder.Services.AddMessaging();
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
-{
-    app.MapOpenApi();
-}
+// Auto-migrate + seed do GestorONG (padrao da Fase 3)
+await app.MigrateAndSeedAsync();
 
-var summaries = new[]
-{
-    "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
-};
+app.UseSwaggerDocumentation(); // sempre ligado: e a interface da demo
+app.UseMiddleware<ExceptionHandlingMiddleware>();
+app.UseAuthentication();
+app.UseAuthorization();
 
-app.MapGet("/weatherforecast", () =>
-{
-    var forecast =  Enumerable.Range(1, 5).Select(index =>
-        new WeatherForecast
-        (
-            DateOnly.FromDateTime(DateTime.Now.AddDays(index)),
-            Random.Shared.Next(-20, 55),
-            summaries[Random.Shared.Next(summaries.Length)]
-        ))
-        .ToArray();
-    return forecast;
-})
-.WithName("GetWeatherForecast");
+app.MapAuth();
+app.MapDoadores();
+app.MapCampanhas();
 
 app.Run();
-
-record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
-{
-    public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
-}
