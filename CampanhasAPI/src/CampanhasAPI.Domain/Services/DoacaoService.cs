@@ -8,6 +8,7 @@ namespace CampanhasAPI.Domain.Services;
 public class DoacaoService(
     IDoacaoRepository doacoes,
     ICampanhaService campanhaService,
+    IMetricas metricas,
     ILogger<DoacaoService> logger) : IDoacaoService
 {
     public async Task<Doacao> RegistrarAsync(Guid idCampanha, Guid idDoador, decimal valor, CancellationToken ct = default)
@@ -18,6 +19,7 @@ public class DoacaoService(
         var doacao = Doacao.Registrar(campanha, idDoador, valor);
         await doacoes.AdicionarAsync(doacao, ct);
 
+        metricas.DoacaoRegistrada(valor);
         logger.LogInformation("Doacao registrada | Id: {Id} | Campanha: {Campanha} | Valor: {Valor}", doacao.Id, idCampanha, valor);
         return doacao;
     }

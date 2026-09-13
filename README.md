@@ -67,7 +67,20 @@ Manifests: infra compartilhada em [`Orchestration/k8s/`](Orchestration/k8s/), ca
 em `<Servico>/k8s/`. Derrubar tudo: `kubectl delete -k Orchestration/k8s`.
 Decisões (LoadBalancer vs NodePort, tags imutáveis, initContainers): [ADR 004](docs/decisoes/004-kubernetes-local.md).
 
-> As seções de observabilidade e CI/CD serão preenchidas conforme as
+## Observabilidade
+
+Sobem junto com o `kubectl apply -k` (ou o `deploy-local.sh`):
+
+| Ferramenta | Endereço | O que mostra |
+|---|---|---|
+| Grafana | http://localhost:3000 (admin / admin, ou anônimo) | dashboard **Conexão Solidária — Observabilidade**: req/s, latência p95, doações registradas × processadas, filas do RabbitMQ, CPU e memória por pod |
+| Prometheus | http://localhost:9090/targets | descoberta automática dos pods, RabbitMQ e cAdvisor |
+| `/health` | :5001 e :5002 | JSON com o status de cada dependência (Postgres/Mongo, RabbitMQ) |
+| `/metrics` | :5001 e :5002 | formato Prometheus: HTTP, runtime .NET e métricas de negócio |
+
+Decisões: [ADR 005](docs/decisoes/005-observabilidade.md).
+
+> A seção de CI/CD será preenchida conforme as
 > fases forem concluídas.
 
 ### Desenvolvendo um serviço isolado

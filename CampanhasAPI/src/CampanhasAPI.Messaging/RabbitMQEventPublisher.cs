@@ -2,12 +2,13 @@ using System.Text;
 using System.Text.Json;
 using CampanhasAPI.Domain.Events;
 using CampanhasAPI.Domain.Interfaces.Events;
+using CampanhasAPI.Domain.Interfaces.Services;
 using Microsoft.Extensions.Logging;
 using RabbitMQ.Client;
 
 namespace CampanhasAPI.Messaging;
 
-public class RabbitMQEventPublisher(RabbitMQConexao conexao, ILogger<RabbitMQEventPublisher> logger) : IEventPublisher
+public class RabbitMQEventPublisher(RabbitMQConexao conexao, IMetricas metricas, ILogger<RabbitMQEventPublisher> logger) : IEventPublisher
 {
     private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web);
 
@@ -34,6 +35,7 @@ public class RabbitMQEventPublisher(RabbitMQConexao conexao, ILogger<RabbitMQEve
 
         await canal.BasicPublishAsync(RabbitMQNomes.Exchange, routingKey, mandatory: false, props, body, ct);
 
+        metricas.EventoPublicado(typeof(T).Name);
         logger.LogInformation("Evento publicado | {Tipo} | RoutingKey: {RoutingKey} | MessageId: {MessageId}",
             typeof(T).Name, routingKey, messageId);
     }

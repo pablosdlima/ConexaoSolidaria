@@ -8,11 +8,13 @@ namespace DoacoesWorker.Domain.Services;
 
 public class ResumoCampanhaService(
     ICampanhaResumoRepository resumos,
+    IMetricas metricas,
     ILogger<ResumoCampanhaService> logger) : IResumoCampanhaService
 {
     public async Task AtualizarAsync(CampanhaAtualizadaEvent e, CancellationToken ct = default)
     {
         await resumos.AtualizarDadosAsync(e, ct);
+        metricas.ResumoAtualizado();
         logger.LogInformation("Resumo atualizado | Campanha: {IdCampanha} | {Titulo} | {Status}", e.IdCampanha, e.Titulo, e.Status);
     }
 

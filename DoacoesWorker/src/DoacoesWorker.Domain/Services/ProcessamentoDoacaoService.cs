@@ -15,10 +15,13 @@ namespace DoacoesWorker.Domain.Services;
 public class ProcessamentoDoacaoService(
     IDoacaoProcessadaRepository ledger,
     ICampanhaResumoRepository resumos,
+    IMetricas metricas,
     ILogger<ProcessamentoDoacaoService> logger) : IProcessamentoDoacaoService
 {
     public async Task<bool> ProcessarAsync(DoacaoRecebidaEvent e, CancellationToken ct = default)
     {
+        using var _ = metricas.MedirProcessamento();
+
         var registro = new DoacaoProcessada
         {
             IdDoacao = e.IdDoacao,
@@ -31,6 +34,7 @@ public class ProcessamentoDoacaoService(
 
         if (!await ledger.TentarRegistrarAsync(registro, ct))
         {
+            metricas.DoacaoDuplicadaIgnorada();
             logger.LogWarning("Doacao {IdDoacao} ja processada — reentrega ignorada (idempotencia)", e.IdDoacao);
             return false;
         }
@@ -45,6 +49,7 @@ public class ProcessamentoDoacaoService(
             throw;
         }
 
+        metricas.DoacaoProcessada(e.Valor);
         logger.LogInformation("Doacao {IdDoacao} somada | Campanha: {IdCampanha} | +{Valor}", e.IdDoacao, e.IdCampanha, e.Valor);
         return true;
     }

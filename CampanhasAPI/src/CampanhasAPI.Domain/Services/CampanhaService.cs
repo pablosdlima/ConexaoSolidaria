@@ -9,6 +9,7 @@ namespace CampanhasAPI.Domain.Services;
 
 public class CampanhaService(
     ICampanhaRepository campanhas,
+    IMetricas metricas,
     ILogger<CampanhaService> logger) : ICampanhaService
 {
     public Task<IReadOnlyList<Campanha>> ListarAsync(CancellationToken ct = default) =>
@@ -24,6 +25,7 @@ public class CampanhaService(
         var campanha = Campanha.Criar(titulo, descricao, dataInicio, dataFim, metaFinanceira);
         await campanhas.AdicionarAsync(campanha, ct);
 
+        metricas.CampanhaCriada();
         logger.LogInformation("Campanha criada | Id: {Id} | Titulo: {Titulo}", campanha.Id, campanha.Titulo);
         return campanha;
     }
