@@ -1,0 +1,95 @@
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><title>Justificativa dos Bancos de Dados — Conexão Solidária</title>
+<style>
+  @page { size: A4; margin: 22mm 20mm; }
+  body { font: 11pt/1.5 "Segoe UI", Arial, sans-serif; color: #1a1a1a; max-width: 170mm; margin: 0 auto; }
+  h1 { font-size: 22pt; margin: 0 0 4px; letter-spacing: -0.01em; }
+  .sub { color: #555; margin: 0 0 24px; font-size: 10.5pt; }
+  h2 { font-size: 14pt; margin: 26px 0 8px; border-bottom: 2px solid #0B7A6A; padding-bottom: 4px; }
+  table { border-collapse: collapse; width: 100%; margin: 10px 0 14px; font-size: 10pt; }
+  th, td { border: 1px solid #cfd6d3; padding: 6px 8px; vertical-align: top; text-align: left; }
+  th { background: #eef3f1; }
+  code { font-family: Consolas, "Cascadia Mono", monospace; font-size: 9.5pt; background: #f2f4f3; padding: 1px 4px; border-radius: 3px; }
+  .box { background: #f6f8f7; border-left: 3px solid #0B7A6A; padding: 10px 14px; margin: 12px 0; }
+  .foot { margin-top: 30px; font-size: 9.5pt; color: #666; border-top: 1px solid #ddd; padding-top: 8px; }
+  ul { margin: 6px 0 10px; padding-left: 20px; } li { margin: 3px 0; }
+</style></head><body>
+
+<h1>Justificativa dos Bancos de Dados</h1>
+<p class="sub">Conexão Solidária · Hackathon 11NETT · Entregável 2b · Setembro de 2026</p>
+
+<h2>1. Resumo da decisão</h2>
+<p>A plataforma é composta por dois microsserviços, cada um dono do seu próprio banco de dados
+(<em>database per service</em>). Foram escolhidos <strong>dois bancos de naturezas diferentes</strong>, porque os
+dois serviços têm necessidades de dados diferentes:</p>
+<table>
+  <tr><th style="width:24%">Serviço</th><th style="width:20%">Banco</th><th>Responsabilidade sobre os dados</th></tr>
+  <tr><td><strong>CampanhasAPI</strong></td><td><strong>PostgreSQL 17</strong></td>
+      <td>Usuários, campanhas e intenções de doação — dados transacionais, relacionais, com integridade referencial.</td></tr>
+  <tr><td><strong>DoacoesWorker</strong></td><td><strong>MongoDB 8</strong></td>
+      <td>Resumo por campanha com o <em>valor total arrecadado</em> (modelo de leitura do painel público) e o ledger
+          de idempotência das doações processadas.</td></tr>
+</table>
+<div class="box">O <strong>valor total arrecadado existe apenas no MongoDB do Worker</strong>. A entidade
+<code>Campanha</code> da API não possui esse campo — o que torna impossível, mesmo por engano, a API atualizá-lo
+diretamente, como exige o requisito técnico de mensageria.</div>
+
+<h2>2. Por que PostgreSQL para a CampanhasAPI</h2>
+<p>Os dados da API são o que o enunciado descreve como regras de integridade:</p>
+<ul>
+  <li><strong>E-mail único no banco</strong> (RF-3): índice único em <code>usuarios.Email</code>. O banco garante, não só o código.</li>
+  <li><strong>Doação pertence a uma campanha e a um doador</strong>: chaves estrangeiras <code>doacoes → campanhas</code> e
+      <code>doacoes → usuarios</code>, com <code>ON DELETE RESTRICT</code>.</li>
+  <li><strong>Dinheiro com precisão exata</strong>: <code>MetaFinanceira</code> e <code>Valor</code> como <code>numeric(18,2)</code>.
+      Ponto flutuante é inaceitável para valores financeiros.</li>
+  <li><strong>Transação ACID</strong> no fluxo "gravar a doação como pendente → publicar o evento → marcar como publicada".</li>
+</ul>
+<p>Além da adequação ao modelo, pesaram fatores operacionais:</p>
+<ul>
+  <li><strong>Entity Framework Core com Npgsql</strong>: migrations versionadas no repositório, aplicadas automaticamente no startup —
+      o mesmo fluxo já praticado pelo time com SQL Server em fases anteriores.</li>
+  <li><strong>Leveza no cluster local</strong>: a imagem <code>postgres:17</code> tem ~150 MB e roda com dezenas de MB de RAM. A alternativa
+      natural, SQL Server, tem imagem de ~1,5 GB e exige 2 GB de RAM para iniciar — num Kubernetes local que também hospeda
+      RabbitMQ, MongoDB, Prometheus e Grafana, isso derruba pods.</li>
+</ul>
+
+<h2>3. Por que MongoDB para o DoacoesWorker</h2>
+<p>O Worker não mantém entidades relacionais; mantém <strong>projeções derivadas de eventos</strong>:</p>
+<ul>
+  <li><strong><code>campanhas_resumo</code></strong> — um documento por campanha, já no formato que o painel de transparência devolve
+      (título, meta, status, total arrecadado, quantidade de doações). O endpoint público lê um documento pronto, sem <em>join</em>
+      e sem tocar no banco transacional da API.</li>
+  <li><strong><code>doacoes_processadas</code></strong> — ledger <em>append-only</em>, chave = <code>IdDoacao</code>. É o que garante que uma
+      doação reentregue pelo broker não seja somada duas vezes.</li>
+</ul>
+<p>Três recursos do MongoDB são usados diretamente pelo desenho:</p>
+<table>
+  <tr><th style="width:30%">Recurso</th><th>Uso</th></tr>
+  <tr><td><code>$inc</code> atômico</td><td>Somar o valor da doação ao total sem ler-modificar-gravar — seguro com várias réplicas do Worker.</td></tr>
+  <tr><td><code>upsert</code> + <code>$setOnInsert</code></td><td>Os eventos de campanha e de doação chegam por filas diferentes, sem ordem garantida.
+      Qualquer um dos dois cria o documento; o outro completa, sem zerar o total.</td></tr>
+  <tr><td>Chave primária <code>_id</code> única</td><td>Inserção no ledger falha por chave duplicada na reentrega — a idempotência é decidida pelo banco,
+      não por uma consulta seguida de inserção (que teria condição de corrida).</td></tr>
+</table>
+<p>Valores monetários são armazenados como <code>Decimal128</code>, nunca como <code>double</code>.</p>
+
+<h2>4. Por que dois bancos, e não um</h2>
+<p>Um único banco compartilhado seria mais simples de operar, mas acoplaria os dois serviços pelo <em>schema</em>: o Worker
+escreveria na tabela da API, e qualquer mudança de modelo em um exigiria coordenação com o outro. Com bancos separados,
+o único contrato entre eles é o <strong>evento</strong> (<code>DoacaoRecebidaEvent</code>, <code>CampanhaAtualizadaEvent</code>). Cada serviço
+pode evoluir, escalar e falhar de forma independente — que é o argumento central da arquitetura de microsserviços.</p>
+<p>O desenho resultante é CQRS: a API é o lado de escrita (comandos, transações), o Worker é o lado de leitura (projeções),
+e o RabbitMQ carrega a projeção de um para o outro. A consistência é eventual — segundos — exatamente o comportamento
+que o enunciado descreve ao dizer que o valor arrecadado é atualizado por um segundo serviço.</p>
+
+<h2>5. Alternativas consideradas e descartadas</h2>
+<table>
+  <tr><th style="width:30%">Alternativa</th><th>Por que não</th></tr>
+  <tr><td>SQL Server no lugar do PostgreSQL</td><td>Já conhecido pelo time, mas 10× mais pesado em imagem e memória. Inviável no cluster local ao lado dos demais componentes. Para o EF Core a diferença é só o provider.</td></tr>
+  <tr><td>Um único PostgreSQL com duas <em>databases</em></td><td>Atende <em>database per service</em>, mas não traz benefício de modelo para o Worker — que precisa de <code>$inc</code>, upsert e documentos, não de tabelas.</td></tr>
+  <tr><td>A API lendo o MongoDB do Worker para servir o painel</td><td>Menos código, mas cria um segundo canal de acoplamento (o schema do Mongo) além do evento. O painel foi colocado no Worker, que é o dono do dado.</td></tr>
+  <tr><td>Redis como segundo banco</td><td>Serviria como cache do painel, mas não como fonte de verdade do total arrecadado nem como ledger durável.</td></tr>
+</table>
+
+<p class="foot">Este documento consolida as decisões registradas no repositório em <code>docs/decisoes/001-bancos-de-dados.md</code> e
+<code>003-painel-de-transparencia.md</code>. Repositório: github.com/pablosdlima/ConexaoSolidaria</p>
+</body></html>
