@@ -73,6 +73,8 @@ kubectl -n conexao-solidaria get pods   # 5 pods Running, 0 restarts
 Manifests: infra compartilhada em [`Orchestration/k8s/`](Orchestration/k8s/), cada serviço
 em `<Servico>/k8s/`. Derrubar tudo: `kubectl delete -k Orchestration/k8s`.
 Decisões (LoadBalancer vs NodePort, tags imutáveis, initContainers): [ADR 004](docs/decisoes/004-kubernetes-local.md).
+**Passo a passo completo, com o que esperar em cada etapa e a solução dos problemas conhecidos:
+[docs/manual-de-deploy.md](docs/manual-de-deploy.md).**
 
 ## Observabilidade
 
