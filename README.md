@@ -48,7 +48,26 @@ dotnet run --project DoacoesWorker/src/DoacoesWorker.Worker   # http://localhost
 | PostgreSQL | localhost:5432 | dev / dev |
 | MongoDB | localhost:27017 | dev / dev |
 
-> As seções de Kubernetes, observabilidade e CI/CD serão preenchidas conforme as
+## Kubernetes (Docker Desktop)
+
+Ligue o Kubernetes no Docker Desktop (Settings → Kubernetes → Enable) e:
+
+```bash
+./Orchestration/deploy-local.sh        # build das imagens com a tag do commit + apply + rollout
+kubectl -n conexao-solidaria get pods   # 5 pods Running, 0 restarts
+```
+
+| Serviço | Endereço |
+|---|---|
+| CampanhasAPI (Swagger) | http://localhost:5001/swagger |
+| Painel público (Worker) | http://localhost:5002/publico/campanhas |
+| RabbitMQ UI | http://localhost:15672 |
+
+Manifests: infra compartilhada em [`Orchestration/k8s/`](Orchestration/k8s/), cada serviço
+em `<Servico>/k8s/`. Derrubar tudo: `kubectl delete -k Orchestration/k8s`.
+Decisões (LoadBalancer vs NodePort, tags imutáveis, initContainers): [ADR 004](docs/decisoes/004-kubernetes-local.md).
+
+> As seções de observabilidade e CI/CD serão preenchidas conforme as
 > fases forem concluídas.
 
 ### Desenvolvendo um serviço isolado
