@@ -72,6 +72,7 @@ services:
     build:
       context: ../CampanhasAPI
       dockerfile: dockerfile
+    image: conexao-solidaria/campanhas-api:${IMAGE_TAG:-local}
     container_name: campanhas-api
     restart: unless-stopped
     ports:
@@ -94,6 +95,7 @@ services:
     build:
       context: ../DoacoesWorker
       dockerfile: dockerfile
+    image: conexao-solidaria/doacoes-worker:${IMAGE_TAG:-local}
     container_name: doacoes-worker
     restart: unless-stopped
     ports:

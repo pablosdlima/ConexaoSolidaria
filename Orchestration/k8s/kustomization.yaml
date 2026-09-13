@@ -1,0 +1,15 @@
+# Sobe a solucao inteira:  kubectl apply -k Orchestration/k8s
+# Derruba:                 kubectl delete -k Orchestration/k8s
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: conexao-solidaria
+
+resources:
+  # infraestrutura compartilhada
+  - namespace.yaml
+  - rabbitmq.yaml
+  - postgres.yaml
+  - mongo.yaml
+  # microsservicos (cada um e dono dos proprios manifests)
+  - ../../CampanhasAPI/k8s
+  - ../../DoacoesWorker/k8s

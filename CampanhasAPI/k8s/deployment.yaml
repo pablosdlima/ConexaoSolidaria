@@ -1,0 +1,56 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: campanhas-api
+  labels:
+    app: campanhas-api
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: campanhas-api
+  template:
+    metadata:
+      labels:
+        app: campanhas-api
+      annotations:                    # Fase 7: o Prometheus descobre o pod por estas anotacoes
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8080"
+        prometheus.io/path: "/metrics"
+    spec:
+      # Espera as dependencias responderem antes de iniciar a API:
+      # sem isso o primeiro start falha na migration e o pod reinicia.
+      initContainers:
+        - name: espera-postgres
+          image: busybox:1.36
+          command: ["sh", "-c", "until nc -z postgres 5432; do echo aguardando postgres; sleep 2; done"]
+        - name: espera-rabbitmq
+          image: busybox:1.36
+          command: ["sh", "-c", "until nc -z rabbitmq 5672; do echo aguardando rabbitmq; sleep 2; done"]
+      containers:
+        - name: campanhas-api
+          image: conexao-solidaria/campanhas-api:local
+          imagePullPolicy: IfNotPresent   # imagem local (Docker Desktop compartilha o cache)
+          ports:
+            - name: http
+              containerPort: 8080
+          envFrom:
+            - configMapRef:
+                name: campanhas-api-config
+            - secretRef:
+                name: campanhas-api-secret
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 20
+          resources:
+            requests: { cpu: 100m, memory: 128Mi }
+            limits:   { memory: 512Mi }

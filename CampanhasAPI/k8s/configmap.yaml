@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: campanhas-api-config
+data:
+  ASPNETCORE_ENVIRONMENT: "Development"
+  RabbitMQ__Host: "rabbitmq"          # nome do Service em Orchestration/k8s
+  RabbitMQ__Port: "5672"
+  RabbitMQ__Username: "dev"
+  Jwt__Issuer: "ConexaoSolidaria.CampanhasAPI"
+  Jwt__Audience: "ConexaoSolidaria"
+  Jwt__ExpiracaoMinutos: "120"
+  Seed__Gestor__Nome: "Gestor da ONG Esperanca Solidaria"
+  Seed__Gestor__Email: "gestor@esperancasolidaria.org"
+  Seed__Gestor__Cpf: "52998224725"

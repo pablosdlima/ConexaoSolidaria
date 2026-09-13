@@ -1,0 +1,12 @@
+# O Worker tem Service porque serve o painel publico (ADR 003), /health e /metrics.
+apiVersion: v1
+kind: Service
+metadata:
+  name: doacoes-worker
+spec:
+  selector:
+    app: doacoes-worker
+  type: LoadBalancer
+  ports:
+    - port: 5002        # Painel: http://localhost:5002/publico/campanhas
+      targetPort: 8080

@@ -14,6 +14,7 @@ builder.Services.AddRepositories(builder.Configuration);
 builder.Services.AddDomainServices();
 builder.Services.AddApplicationServices(builder.Configuration);
 builder.Services.AddRabbitMQMessaging(builder.Configuration);
+builder.Services.AddHealthChecks();
 
 var app = builder.Build();
 
@@ -22,6 +23,7 @@ await app.MigrateAndSeedAsync();
 await app.InitializeRabbitMQAsync();
 
 app.UseSwaggerDocumentation(); // sempre ligado: e a interface da demo
+app.MapHealthChecks("/health");
 app.UseMiddleware<ExceptionHandlingMiddleware>();
 app.UseAuthentication();
 app.UseAuthorization();

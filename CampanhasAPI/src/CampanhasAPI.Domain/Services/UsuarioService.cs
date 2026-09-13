@@ -3,6 +3,7 @@ using CampanhasAPI.Domain.Enums;
 using CampanhasAPI.Domain.Exceptions;
 using CampanhasAPI.Domain.Interfaces.Repositories;
 using CampanhasAPI.Domain.Interfaces.Services;
+using CampanhasAPI.Domain.Validators;
 using Microsoft.Extensions.Logging;
 
 namespace CampanhasAPI.Domain.Services;
@@ -18,6 +19,13 @@ public class UsuarioService(
         {
             logger.LogWarning("Cadastro recusado: e-mail ja existe | Email: {Email}", email);
             throw new ConflitoException("Já existe um usuário cadastrado com este e-mail.");
+        }
+
+        var cpfNormalizado = CpfValidator.Normalizar(cpf);
+        if (await usuarios.CpfJaCadastradoAsync(cpfNormalizado, ct))
+        {
+            logger.LogWarning("Cadastro recusado: CPF ja existe");
+            throw new ConflitoException("Já existe um usuário cadastrado com este CPF.");
         }
 
         // RF-3: a senha nunca chega ao banco em texto puro
