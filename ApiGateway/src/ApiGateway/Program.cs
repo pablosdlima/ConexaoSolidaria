@@ -37,5 +37,7 @@ app.MapGet("/", () => Results.Ok(new
     rotas = new[] { "/api/auth", "/api/doadores", "/api/campanhas", "/api/doacoes", "/api/publico/campanhas" }
 }));
 
-await app.UseOcelot();
+// Ocelot e terminal: sem este filtro ele responderia 404 para /health e as probes do Kubernetes
+// reiniciariam o pod. So /api/* passa pelo gateway; /health e / ficam com o ASP.NET.
+app.MapWhen(ctx => ctx.Request.Path.StartsWithSegments("/api"), b => b.UseOcelot().Wait());
 app.Run();

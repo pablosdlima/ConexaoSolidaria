@@ -31,6 +31,10 @@ mais uma rota `/api`. A topologia interna deixa de vazar para o cliente.
 Proteção contra força bruta é responsabilidade de borda — um lugar, para todos os
 serviços — e não da API.
 
+**Ocelot só em `/api/*`.** O middleware do Ocelot é terminal: sem o `MapWhen`, ele
+respondia 404 para `/health` e as probes do Kubernetes reiniciavam o pod em loop
+(descoberto no primeiro deploy no cluster — no compose, sem probes, passou despercebido).
+
 **O gateway não valida JWT.** Cada serviço é dono da própria autorização (a API
 já valida token e role). Validar também no gateway exigiria compartilhar a chave e
 duplicar regra; o ganho seria rejeitar um pouco antes. Fica como evolução.
