@@ -8,5 +8,9 @@ spec:
     app: doacoes-worker
   type: LoadBalancer
   ports:
-    - port: 5002        # Painel: http://localhost:5002/publico/campanhas
+    - name: externo
+      port: 5002        # Painel: http://localhost:5002/publico/campanhas
+      targetPort: 8080
+    - name: interno       # usado pelo API Gateway dentro do cluster
+      port: 8080
       targetPort: 8080

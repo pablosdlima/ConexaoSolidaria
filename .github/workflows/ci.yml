@@ -34,6 +34,9 @@ jobs:
           - name: doacoes-worker
             dir: DoacoesWorker
             solution: DoacoesWorker.slnx
+          - name: api-gateway
+            dir: ApiGateway
+            solution: ApiGateway.slnx
 
     steps:
       - name: Checkout

@@ -4,6 +4,7 @@
 #   docker compose up -d                  → só a infraestrutura
 #   docker compose --profile app up -d    → infraestrutura + API + Worker (a partir da Fase 5)
 #
+#   API Gateway:   http://localhost:5000  (entrada unica: /api/...)
 #   CampanhasAPI:  http://localhost:5001/swagger
 #   DoacoesWorker: http://localhost:5002/publico/campanhas
 #   RabbitMQ UI:   http://localhost:15672   (dev / dev)
@@ -112,6 +113,23 @@ services:
         condition: service_healthy
       rabbitmq:
         condition: service_healthy
+
+
+  api-gateway:
+    profiles: ["app"]
+    build:
+      context: ../ApiGateway
+      dockerfile: dockerfile
+    image: conexao-solidaria/api-gateway:${IMAGE_TAG:-local}
+    container_name: api-gateway
+    restart: unless-stopped
+    ports:
+      - "5000:8080"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+    depends_on:
+      - campanhas-api
+      - doacoes-worker
 
 volumes:
   postgres-data:

@@ -9,5 +9,9 @@ spec:
     app: campanhas-api
   type: LoadBalancer
   ports:
-    - port: 5001        # Swagger: http://localhost:5001/swagger
+    - name: externo
+      port: 5001        # Swagger: http://localhost:5001/swagger
+      targetPort: 8080
+    - name: interno       # usado pelo API Gateway dentro do cluster
+      port: 8080
       targetPort: 8080

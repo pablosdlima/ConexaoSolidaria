@@ -61,6 +61,7 @@ kubectl -n conexao-solidaria get pods   # 5 pods Running, 0 restarts
 
 | Serviço | Endereço |
 |---|---|
+| **API Gateway** | http://localhost:5000/api/... |
 | CampanhasAPI (Swagger) | http://localhost:5001/swagger |
 | Painel público (Worker) | http://localhost:5002/publico/campanhas |
 | RabbitMQ UI | http://localhost:15672 |
@@ -123,6 +124,19 @@ cd DoacoesWorker && docker compose up -d    # MongoDB + RabbitMQ
 
 > Os dois usam as mesmas portas do RabbitMQ — não suba ambos ao mesmo tempo.
 > Para rodar a solução inteira, use `Orchestration/`.
+
+## API Gateway
+
+Entrada única: **http://localhost:5000**. O cliente não precisa saber que o painel
+público vive no Worker.
+
+| Rota | Vai para |
+|---|---|
+| `POST /api/auth/login` · `/api/doadores` · `/api/campanhas` · `/api/doacoes` | CampanhasAPI |
+| `GET /api/publico/campanhas` | DoacoesWorker (`/publico/campanhas`) |
+
+Rate limit no login: 10 tentativas/min por cliente (429 acima). Os Swaggers continuam
+nas portas diretas (`:5001`, `:5002`). Decisões: [ADR 007](docs/decisoes/007-api-gateway.md).
 
 ## Fluxo de uma doação
 

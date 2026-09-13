@@ -1,0 +1,10 @@
+{
+  "_comentario": "dotnet run local: os servicos rodam em localhost:5080 (API) e :5090 (Worker)",
+  "Routes": [
+    { "UpstreamPathTemplate": "/api/auth/{everything}",     "DownstreamHostAndPorts": [ { "Host": "localhost", "Port": 5080 } ] },
+    { "UpstreamPathTemplate": "/api/doadores/{everything}", "DownstreamHostAndPorts": [ { "Host": "localhost", "Port": 5080 } ] },
+    { "UpstreamPathTemplate": "/api/campanhas/{everything}","DownstreamHostAndPorts": [ { "Host": "localhost", "Port": 5080 } ] },
+    { "UpstreamPathTemplate": "/api/doacoes/{everything}",  "DownstreamHostAndPorts": [ { "Host": "localhost", "Port": 5080 } ] },
+    { "UpstreamPathTemplate": "/api/publico/{everything}",  "DownstreamHostAndPorts": [ { "Host": "localhost", "Port": 5090 } ] }
+  ]
+}

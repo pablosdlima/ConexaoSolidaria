@@ -1,0 +1,42 @@
+{
+  "GlobalConfiguration": {},
+  "Routes": [
+    {
+      "_comentario": "Login: o rate limit por IP e aplicado pelo middleware do ASP.NET no Program.cs",
+      "UpstreamPathTemplate": "/api/auth/{everything}",
+      "UpstreamHttpMethod": [ "POST" ],
+      "DownstreamPathTemplate": "/api/auth/{everything}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [ { "Host": "campanhas-api", "Port": 8080 } ]
+    },
+    {
+      "UpstreamPathTemplate": "/api/doadores/{everything}",
+      "UpstreamHttpMethod": [ "POST", "GET" ],
+      "DownstreamPathTemplate": "/api/doadores/{everything}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [ { "Host": "campanhas-api", "Port": 8080 } ]
+    },
+    {
+      "UpstreamPathTemplate": "/api/campanhas/{everything}",
+      "UpstreamHttpMethod": [ "GET", "POST", "PUT", "PATCH" ],
+      "DownstreamPathTemplate": "/api/campanhas/{everything}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [ { "Host": "campanhas-api", "Port": 8080 } ]
+    },
+    {
+      "UpstreamPathTemplate": "/api/doacoes/{everything}",
+      "UpstreamHttpMethod": [ "GET", "POST" ],
+      "DownstreamPathTemplate": "/api/doacoes/{everything}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [ { "Host": "campanhas-api", "Port": 8080 } ]
+    },
+    {
+      "_comentario": "Painel de transparencia: vive no Worker (ADR 003), mas para quem chama e so /api/publico",
+      "UpstreamPathTemplate": "/api/publico/{everything}",
+      "UpstreamHttpMethod": [ "GET" ],
+      "DownstreamPathTemplate": "/publico/{everything}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [ { "Host": "doacoes-worker", "Port": 8080 } ]
+    }
+  ]
+}

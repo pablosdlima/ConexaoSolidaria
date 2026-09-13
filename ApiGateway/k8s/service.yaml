@@ -1,0 +1,12 @@
+# Entrada unica da solucao: http://localhost:5000/api/...
+apiVersion: v1
+kind: Service
+metadata:
+  name: api-gateway
+spec:
+  selector:
+    app: api-gateway
+  type: LoadBalancer
+  ports:
+    - port: 5000
+      targetPort: 8080

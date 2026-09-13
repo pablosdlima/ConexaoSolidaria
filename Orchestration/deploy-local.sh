@@ -22,12 +22,15 @@ kubectl apply -k k8s
 echo "==> atualizando deployments para :$TAG"
 kubectl -n conexao-solidaria set image deploy/campanhas-api  campanhas-api=conexao-solidaria/campanhas-api:$TAG
 kubectl -n conexao-solidaria set image deploy/doacoes-worker doacoes-worker=conexao-solidaria/doacoes-worker:$TAG
+kubectl -n conexao-solidaria set image deploy/api-gateway   api-gateway=conexao-solidaria/api-gateway:$TAG
 kubectl -n conexao-solidaria rollout status deploy/campanhas-api  --timeout=180s
 kubectl -n conexao-solidaria rollout status deploy/doacoes-worker --timeout=180s
+kubectl -n conexao-solidaria rollout status deploy/api-gateway   --timeout=180s
 
 echo
 kubectl -n conexao-solidaria get pods
 echo
+echo "API Gateway:   http://localhost:5000/api/..."
 echo "CampanhasAPI:  http://localhost:5001/swagger"
 echo "Painel:        http://localhost:5002/publico/campanhas"
 echo "RabbitMQ UI:   http://localhost:15672  (dev / dev)"

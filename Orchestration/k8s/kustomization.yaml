@@ -13,5 +13,6 @@ resources:
   # microsservicos (cada um e dono dos proprios manifests)
   - ../../CampanhasAPI/k8s
   - ../../DoacoesWorker/k8s
+  - ../../ApiGateway/k8s
   # observabilidade (Prometheus + Grafana)
   - monitoring
