@@ -1,0 +1,98 @@
+# CI da Conexão Solidária — um job por microsserviço.
+#
+# A cada push na main:  dotnet build → imagem Docker → push no GitHub Container Registry
+# Em pull request:      dotnet build → imagem Docker (sem push)
+#
+# Tags das imagens: <sha curto do commit> (imutável) e latest (só na main).
+# Imagens: ghcr.io/<owner>/<repo>/campanhas-api  e  .../doacoes-worker
+
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  build:
+    name: ${{ matrix.service.name }}
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false            # um serviço quebrado não esconde o resultado do outro
+      matrix:
+        service:
+          - name: campanhas-api
+            dir: CampanhasAPI
+            solution: CampanhasAPI.slnx
+          - name: doacoes-worker
+            dir: DoacoesWorker
+            solution: DoacoesWorker.slnx
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # ─── .NET ────────────────────────────────────────────────
+      - name: Setup .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Restore
+        run: dotnet restore ${{ matrix.service.dir }}/${{ matrix.service.solution }}
+
+      - name: Build (Release)
+        run: dotnet build ${{ matrix.service.dir }}/${{ matrix.service.solution }} -c Release --no-restore
+
+      # Fase 9 (bônus): testes de unidade entram aqui, antes da imagem.
+
+      # ─── Docker ──────────────────────────────────────────────
+      - name: Nome da imagem (GHCR exige minúsculas)
+        run: echo "IMAGE=ghcr.io/${GITHUB_REPOSITORY,,}/${{ matrix.service.name }}" >> "$GITHUB_ENV"
+
+      - name: Login no GitHub Container Registry
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Tags e labels da imagem
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.IMAGE }}
+          tags: |
+            type=sha,prefix=,format=short
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: Setup Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build da imagem (e push na main)
+        uses: docker/build-push-action@v6
+        with:
+          context: ${{ matrix.service.dir }}      # contexto = pasta do serviço, igual ao dockerfile local
+          file: ${{ matrix.service.dir }}/dockerfile
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha,scope=${{ matrix.service.name }}
+          cache-to: type=gha,scope=${{ matrix.service.name }},mode=max
+
+      - name: Resumo
+        run: |
+          {
+            echo "### ${{ matrix.service.name }}"
+            echo '```'
+            echo "${{ steps.meta.outputs.tags }}"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"

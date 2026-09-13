@@ -1,5 +1,7 @@
 # Conexão Solidária
 
+[![CI](https://github.com/pablosdlima/ConexaoSolidaria/actions/workflows/ci.yml/badge.svg)](https://github.com/pablosdlima/ConexaoSolidaria/actions/workflows/ci.yml)
+
 MVP da plataforma de gestão de doadores e campanhas da ONG Esperança Solidária —
 Hackathon 11NETT.
 
@@ -80,7 +82,22 @@ Sobem junto com o `kubectl apply -k` (ou o `deploy-local.sh`):
 
 Decisões: [ADR 005](docs/decisoes/005-observabilidade.md).
 
-> A seção de CI/CD será preenchida conforme as
+## CI/CD
+
+[`.github/workflows/ci.yml`](.github/workflows/ci.yml) roda a cada push na `main` — **um job por microsserviço**:
+
+1. `dotnet restore` + `dotnet build -c Release` na solution do serviço
+2. build da imagem Docker (mesmo `dockerfile` usado localmente)
+3. push para o GitHub Container Registry com duas tags: o **SHA curto do commit** (imutável) e `latest`
+
+| Imagem | Tags |
+|---|---|
+| `ghcr.io/pablosdlima/conexaosolidaria/campanhas-api` | `<sha>`, `latest` |
+| `ghcr.io/pablosdlima/conexaosolidaria/doacoes-worker` | `<sha>`, `latest` |
+
+Em pull requests o pipeline compila e constrói a imagem, mas não publica. Execuções: [Actions](https://github.com/pablosdlima/ConexaoSolidaria/actions).
+
+> A seção de entrega será preenchida conforme as
 > fases forem concluídas.
 
 ### Desenvolvendo um serviço isolado
