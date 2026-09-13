@@ -41,8 +41,24 @@ GestorONG. Um motivo para mudar em cada classe.
 - **OCP no Worker** — `RabbitMQConsumerBase<TEvento, THandler>` é *template method*:
   uma fila nova é uma subclasse de 10 linhas.
 
+**`IGenericService<T>` + `GenericService<T>` (mesma ideia da Fase 3, enxuta).** Os
+domain services herdam de uma base que delega o comum ao `IRepository<T>` e
+centraliza a regra do 404 (`ObterPorIdAsync` lança `NotFoundException` em um único
+lugar). Diferenças em relação à Fase 3, de propósito:
+- **sem `Delete`** — nenhum requisito apaga campanha, usuário ou doação; expor a
+  operação seria convite a usá-la (ISP);
+- **sem `Get()` devolvendo `IQueryable`** — vazaria o EF Core para fora do `Data`
+  e permitiria consultas arbitrárias a partir da camada de aplicação;
+- **sem `GetByIdInt`, `LastId`, `ListarPaginacao`** — não há uso.
+
+Estrutura resultante (espelha a Fase 3):
+
+```
+Domain/Interfaces/Generic/IGenericService.cs     Domain/Services/Generic/GenericService.cs
+Domain/Interfaces/Repositories/IRepository.cs    Data/Repositories/RepositoryBase.cs
+```
+
 ## Alternativa descartada
 
-**`IGenericServices<T>` / `GenericServices<T>` da Fase 3.** Um service genérico com
-CRUD expõe operações que nem todo agregado deveria ter (deletar campanha? deletar
-doação?). Fere ISP. Os domain services aqui têm só os métodos que o enunciado pede.
+**Copiar o `GenericServices<T>` da Fase 3 integralmente.** Traria `Delete`,
+`IQueryable` e métodos sem uso. Foi adaptado, não copiado.

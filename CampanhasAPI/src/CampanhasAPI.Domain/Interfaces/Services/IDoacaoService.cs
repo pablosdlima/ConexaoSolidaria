@@ -1,12 +1,13 @@
 using CampanhasAPI.Domain.Entities;
+using CampanhasAPI.Domain.Interfaces.Generic;
 
 namespace CampanhasAPI.Domain.Interfaces.Services;
 
-public interface IDoacaoService
+public interface IDoacaoService : IGenericService<Doacao>
 {
     /// <summary>
-    /// RF-5: registra a intenção de doação como Pendente. Lança NotFoundException se a
-    /// campanha não existe e DomainException se ela não aceita doações.
+    /// RF-5: registra a intencao de doacao como Pendente. Lanca NotFoundException se a
+    /// campanha nao existe e DomainException se ela nao aceita doacoes.
     /// </summary>
     Task<Doacao> RegistrarAsync(Guid idCampanha, Guid idDoador, decimal valor, CancellationToken ct = default);
 

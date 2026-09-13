@@ -20,7 +20,7 @@ public class CampanhaAppService(
         (await campanhaService.ListarAsync(ct)).Select(CampanhaResponse.De).ToList();
 
     public async Task<CampanhaResponse> ObterAsync(Guid id, CancellationToken ct = default) =>
-        CampanhaResponse.De(await campanhaService.ObterAsync(id, ct));
+        CampanhaResponse.De(await campanhaService.ObterPorIdAsync(id, ct));
 
     public async Task<CampanhaResponse> CriarAsync(CampanhaRequest r, CancellationToken ct = default)
     {
@@ -31,7 +31,7 @@ public class CampanhaAppService(
 
     public async Task<CampanhaResponse> AtualizarAsync(Guid id, CampanhaRequest r, CancellationToken ct = default)
     {
-        var campanha = await campanhaService.AtualizarAsync(id, r.Titulo, r.Descricao, r.DataInicio, r.DataFim, r.MetaFinanceira, ct);
+        var campanha = await campanhaService.EditarAsync(id, r.Titulo, r.Descricao, r.DataInicio, r.DataFim, r.MetaFinanceira, ct);
         await PublicarAsync(campanha, ct);
         return CampanhaResponse.De(campanha);
     }
