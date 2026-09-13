@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
         - name: api-gateway
-          image: conexao-solidaria/api-gateway:local
+          image: ghcr.io/pablosdlima/conexaosolidaria/api-gateway:latest   # publicada pelo CI; deploy-local.sh troca pela imagem local
           imagePullPolicy: IfNotPresent
           ports:
             - name: http

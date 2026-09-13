@@ -483,3 +483,6 @@ $RECYCLE.BIN/
 
 # Cache do C# Dev Kit / Visual Studio
 *.lscache
+
+# overlay gerado pelo deploy-local.sh
+Orchestration/k8s-local/

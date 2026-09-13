@@ -29,8 +29,8 @@ spec:
           command: ["sh", "-c", "until nc -z rabbitmq 5672; do echo aguardando rabbitmq; sleep 2; done"]
       containers:
         - name: campanhas-api
-          image: conexao-solidaria/campanhas-api:local
-          imagePullPolicy: IfNotPresent   # imagem local (Docker Desktop compartilha o cache)
+          image: ghcr.io/pablosdlima/conexaosolidaria/campanhas-api:latest   # publicada pelo CI; deploy-local.sh troca pela imagem local
+          imagePullPolicy: IfNotPresent
           ports:
             - name: http
               containerPort: 8080

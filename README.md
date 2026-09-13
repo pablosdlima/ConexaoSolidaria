@@ -55,7 +55,11 @@ dotnet run --project DoacoesWorker/src/DoacoesWorker.Worker   # http://localhost
 Ligue o Kubernetes no Docker Desktop (Settings → Kubernetes → Enable) e:
 
 ```bash
-./Orchestration/deploy-local.sh        # build das imagens com a tag do commit + apply + rollout
+# Opcao A — imagens publicadas pelo CI (nao compila nada; e assim que a correcao deve rodar)
+kubectl apply -k Orchestration/k8s
+
+# Opcao B — imagens construidas localmente (desenvolvimento)
+./Orchestration/deploy-local.sh        # build com a tag do commit + overlay + rollout
 kubectl -n conexao-solidaria get pods   # 5 pods Running, 0 restarts
 ```
 

@@ -50,3 +50,25 @@ durante um rolling update.
   load` / `kind load docker-image` a cada build — mais um passo para o README.
 - **Ingress.** Um único ponto de entrada seria mais elegante, mas exige instalar um
   ingress controller. Fica como evolução junto com o API Gateway (bônus).
+
+## Adendos (2026-09-13, após o gateway e o clone limpo)
+
+**Manifests apontam para o GHCR; o overlay local troca pelas imagens da máquina.**
+`kubectl apply -k Orchestration/k8s` sobe a solução em qualquer máquina só com o Docker,
+puxando as imagens que o CI publicou. `deploy-local.sh` gera `Orchestration/k8s-local/`
+(ignorado pelo git) com um `images:` do kustomize substituindo as três pelas locais com a
+tag do commit, e aplica esse overlay. Antes o script fazia `kubectl set image` depois do
+`apply` — e qualquer `apply` seguinte revertia para o GHCR silenciosamente (aconteceu).
+
+**Uma porta por Service LoadBalancer.** No Docker Desktop, cada LoadBalancer vira um
+container Envoy (`kindccm-…`) que publica as portas do Service no host. Dois Services
+expondo a mesma porta (a API e o Worker tinham uma porta "interna" 8080 para o gateway)
+fazem o segundo falhar em `<pending>` — e deixam um container quebrado que o cloud provider
+não consegue limpar, prendendo o Service em `Terminating` com o finalizer
+`service.kubernetes.io/load-balancer-cleanup`. O gateway agora usa as portas dos próprios
+Services (`campanhas-api:5001`, `doacoes-worker:5002`); o compose faz os containers
+escutarem nessas mesmas portas para o `ocelot.json` ser único.
+
+**Namespace preso em `Terminating`.** Sintoma do caso acima. Solução documentada no manual
+de deploy: remover o container `kindccm-…` pelo nome (aparece nos eventos do Service) e
+limpar o finalizer do Service com `kubectl patch`.

@@ -1,5 +1,7 @@
-# LoadBalancer: no Docker Desktop (e em nuvem) ganha IP externo — aqui, localhost:5001.
-# NodePort nao e encaminhado para o localhost no Kubernetes baseado em kind do Docker Desktop.
+# LoadBalancer: no Docker Desktop ganha IP externo em localhost:5001 (e em nuvem, um IP publico).
+# Uma porta por Service: no Docker Desktop cada LoadBalancer vira um container que publica
+# a porta no host — duas Services com a mesma porta conflitam (ADR 004).
+# O API Gateway fala com este Service por campanhas-api:5001.
 apiVersion: v1
 kind: Service
 metadata:
@@ -9,9 +11,5 @@ spec:
     app: campanhas-api
   type: LoadBalancer
   ports:
-    - name: externo
-      port: 5001        # Swagger: http://localhost:5001/swagger
-      targetPort: 8080
-    - name: interno       # usado pelo API Gateway dentro do cluster
-      port: 8080
+    - port: 5001        # Swagger: http://localhost:5001/swagger
       targetPort: 8080

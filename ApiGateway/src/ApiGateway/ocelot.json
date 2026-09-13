@@ -7,28 +7,28 @@
       "UpstreamHttpMethod": [ "POST" ],
       "DownstreamPathTemplate": "/api/auth/{everything}",
       "DownstreamScheme": "http",
-      "DownstreamHostAndPorts": [ { "Host": "campanhas-api", "Port": 8080 } ]
+      "DownstreamHostAndPorts": [ { "Host": "campanhas-api", "Port": 5001 } ]
     },
     {
       "UpstreamPathTemplate": "/api/doadores/{everything}",
       "UpstreamHttpMethod": [ "POST", "GET" ],
       "DownstreamPathTemplate": "/api/doadores/{everything}",
       "DownstreamScheme": "http",
-      "DownstreamHostAndPorts": [ { "Host": "campanhas-api", "Port": 8080 } ]
+      "DownstreamHostAndPorts": [ { "Host": "campanhas-api", "Port": 5001 } ]
     },
     {
       "UpstreamPathTemplate": "/api/campanhas/{everything}",
       "UpstreamHttpMethod": [ "GET", "POST", "PUT", "PATCH" ],
       "DownstreamPathTemplate": "/api/campanhas/{everything}",
       "DownstreamScheme": "http",
-      "DownstreamHostAndPorts": [ { "Host": "campanhas-api", "Port": 8080 } ]
+      "DownstreamHostAndPorts": [ { "Host": "campanhas-api", "Port": 5001 } ]
     },
     {
       "UpstreamPathTemplate": "/api/doacoes/{everything}",
       "UpstreamHttpMethod": [ "GET", "POST" ],
       "DownstreamPathTemplate": "/api/doacoes/{everything}",
       "DownstreamScheme": "http",
-      "DownstreamHostAndPorts": [ { "Host": "campanhas-api", "Port": 8080 } ]
+      "DownstreamHostAndPorts": [ { "Host": "campanhas-api", "Port": 5001 } ]
     },
     {
       "_comentario": "Painel de transparencia: vive no Worker (ADR 003), mas para quem chama e so /api/publico",
@@ -36,7 +36,7 @@
       "UpstreamHttpMethod": [ "GET" ],
       "DownstreamPathTemplate": "/publico/{everything}",
       "DownstreamScheme": "http",
-      "DownstreamHostAndPorts": [ { "Host": "doacoes-worker", "Port": 8080 } ]
+      "DownstreamHostAndPorts": [ { "Host": "doacoes-worker", "Port": 5002 } ]
     }
   ]
 }

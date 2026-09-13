@@ -1,11 +1,12 @@
 #!/usr/bin/env sh
-# Build das duas imagens com a tag do commit atual e deploy no Kubernetes local.
+# Build das tres imagens com a tag do commit atual e deploy no Kubernetes local.
 #
-#   ./Orchestration/deploy-local.sh          # build + apply + set image
+#   ./Orchestration/deploy-local.sh
 #
-# Por que a tag do commit e nao :local? O node do Kubernetes tem cache proprio de
-# imagens: com a mesma tag, um "rollout restart" sobe a imagem ANTIGA. Tag imutavel
-# por commit e o que o CI (Fase 8) tambem faz.
+# Os manifests em k8s/ apontam para as imagens publicadas no GHCR (caminho de quem so quer
+# rodar: kubectl apply -k Orchestration/k8s). Para desenvolver sem esperar o CI, este script
+# gera um overlay (k8s-local/, ignorado pelo git) que troca as imagens pelas locais, com a
+# tag do commit — tag imutavel, porque o node do Kubernetes tem cache proprio (ADR 004).
 set -e
 cd "$(dirname "$0")"
 
@@ -16,16 +17,31 @@ export IMAGE_TAG="$TAG"
 echo "==> build das imagens :$TAG"
 docker compose --profile app build
 
-echo "==> aplicando manifests"
-kubectl apply -k k8s
+echo "==> gerando overlay k8s-local com as imagens locais"
+mkdir -p k8s-local
+cat > k8s-local/kustomization.yaml <<K
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ../k8s
+images:
+  - name: ghcr.io/pablosdlima/conexaosolidaria/campanhas-api
+    newName: conexao-solidaria/campanhas-api
+    newTag: "$TAG"
+  - name: ghcr.io/pablosdlima/conexaosolidaria/doacoes-worker
+    newName: conexao-solidaria/doacoes-worker
+    newTag: "$TAG"
+  - name: ghcr.io/pablosdlima/conexaosolidaria/api-gateway
+    newName: conexao-solidaria/api-gateway
+    newTag: "$TAG"
+K
 
-echo "==> atualizando deployments para :$TAG"
-kubectl -n conexao-solidaria set image deploy/campanhas-api  campanhas-api=conexao-solidaria/campanhas-api:$TAG
-kubectl -n conexao-solidaria set image deploy/doacoes-worker doacoes-worker=conexao-solidaria/doacoes-worker:$TAG
-kubectl -n conexao-solidaria set image deploy/api-gateway   api-gateway=conexao-solidaria/api-gateway:$TAG
-kubectl -n conexao-solidaria rollout status deploy/campanhas-api  --timeout=180s
-kubectl -n conexao-solidaria rollout status deploy/doacoes-worker --timeout=180s
-kubectl -n conexao-solidaria rollout status deploy/api-gateway   --timeout=180s
+echo "==> kubectl apply -k k8s-local"
+kubectl apply -k k8s-local
+
+for d in campanhas-api doacoes-worker api-gateway; do
+  kubectl -n conexao-solidaria rollout status deploy/$d --timeout=180s
+done
 
 echo
 kubectl -n conexao-solidaria get pods
@@ -33,4 +49,5 @@ echo
 echo "API Gateway:   http://localhost:5000/api/..."
 echo "CampanhasAPI:  http://localhost:5001/swagger"
 echo "Painel:        http://localhost:5002/publico/campanhas"
+echo "Grafana:       http://localhost:3000"
 echo "RabbitMQ UI:   http://localhost:15672  (dev / dev)"
