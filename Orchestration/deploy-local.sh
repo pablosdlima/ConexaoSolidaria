@@ -34,6 +34,16 @@ images:
   - name: ghcr.io/pablosdlima/conexaosolidaria/api-gateway
     newName: conexao-solidaria/api-gateway
     newTag: "$TAG"
+patches:
+  - target: { kind: Deployment, name: campanhas-api }
+    patch: |
+      - { op: replace, path: /spec/template/spec/containers/0/imagePullPolicy, value: IfNotPresent }
+  - target: { kind: Deployment, name: doacoes-worker }
+    patch: |
+      - { op: replace, path: /spec/template/spec/containers/0/imagePullPolicy, value: IfNotPresent }
+  - target: { kind: Deployment, name: api-gateway }
+    patch: |
+      - { op: replace, path: /spec/template/spec/containers/0/imagePullPolicy, value: IfNotPresent }
 K
 
 echo "==> kubectl apply -k k8s-local"

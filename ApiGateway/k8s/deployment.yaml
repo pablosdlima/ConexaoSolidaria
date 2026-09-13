@@ -17,7 +17,7 @@ spec:
       containers:
         - name: api-gateway
           image: ghcr.io/pablosdlima/conexaosolidaria/api-gateway:latest   # publicada pelo CI; deploy-local.sh troca pela imagem local
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: Always          # latest do GHCR: sempre buscar a versao publicada pelo CI
           ports:
             - name: http
               containerPort: 8080
