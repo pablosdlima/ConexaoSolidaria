@@ -4,23 +4,16 @@ using Microsoft.EntityFrameworkCore;
 
 namespace CampanhasAPI.Data.Repositories;
 
-public class UsuarioRepository(CampanhasDbContext context) : IUsuarioRepository
+public class UsuarioRepository(CampanhasDbContext context) : RepositoryBase<Usuario>(context), IUsuarioRepository
 {
-    public Task<Usuario?> ObterPorIdAsync(Guid id, CancellationToken ct = default) =>
-        context.Usuarios.FirstOrDefaultAsync(u => u.Id == id, ct);
-
     public Task<Usuario?> ObterPorEmailAsync(string email, CancellationToken ct = default) =>
-        context.Usuarios.FirstOrDefaultAsync(u => u.Email == email.Trim().ToLowerInvariant(), ct);
+        Set.FirstOrDefaultAsync(u => u.Email == Normalizar(email), ct);
 
     public Task<bool> EmailJaCadastradoAsync(string email, CancellationToken ct = default) =>
-        context.Usuarios.AnyAsync(u => u.Email == email.Trim().ToLowerInvariant(), ct);
+        Set.AnyAsync(u => u.Email == Normalizar(email), ct);
 
     public Task<bool> CpfJaCadastradoAsync(string cpf, CancellationToken ct = default) =>
-        context.Usuarios.AnyAsync(u => u.Cpf == cpf, ct);
+        Set.AnyAsync(u => u.Cpf == cpf, ct);
 
-    public async Task AdicionarAsync(Usuario usuario, CancellationToken ct = default)
-    {
-        await context.Usuarios.AddAsync(usuario, ct);
-        await context.SaveChangesAsync(ct);
-    }
+    private static string Normalizar(string email) => email.Trim().ToLowerInvariant();
 }

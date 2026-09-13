@@ -44,12 +44,7 @@ public class CampanhaService(
     {
         var campanha = await ObterAsync(id, ct);
 
-        switch (novoStatus)
-        {
-            case StatusCampanha.Concluida: campanha.Concluir(); break;
-            case StatusCampanha.Cancelada: campanha.Cancelar(); break;
-            default: throw new DomainException("Status deve ser Concluida ou Cancelada.");
-        }
+        campanha.AlterarStatus(novoStatus);
 
         await campanhas.AtualizarAsync(campanha, ct);
 

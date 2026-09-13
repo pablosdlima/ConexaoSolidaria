@@ -15,6 +15,8 @@ public static class RepositoryCollectionExtensions
             ?? throw new InvalidOperationException("ConnectionStrings:Campanhas nao configurada.");
 
         services.AddDbContext<CampanhasDbContext>(o => o.UseNpgsql(connectionString));
+        services.Configure<SeedOptions>(configuration.GetSection(SeedOptions.Secao));
+        services.AddScoped<DbSeeder>();
 
         services.AddScoped<ICampanhaRepository, CampanhaRepository>();
         services.AddScoped<IUsuarioRepository, UsuarioRepository>();

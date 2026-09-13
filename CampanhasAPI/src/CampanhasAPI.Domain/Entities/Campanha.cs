@@ -58,8 +58,10 @@ public class Campanha
     public bool AceitaDoacoes(DateTimeOffset agora) =>
         Status == StatusCampanha.Ativa && agora <= DataFim;
 
-    private void AlterarStatus(StatusCampanha novo)
+    /// <summary>Unica transicao permitida: Ativa → Concluida ou Cancelada. A regra mora aqui, nao no service.</summary>
+    public void AlterarStatus(StatusCampanha novo)
     {
+        DomainException.Quando(novo == StatusCampanha.Ativa, "Uma campanha nao pode voltar a ser Ativa.");
         DomainException.Quando(Status != StatusCampanha.Ativa,
             $"Campanha {Status} não pode mudar para {novo}. Só campanhas ativas mudam de status.");
         Status = novo;
