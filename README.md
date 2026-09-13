@@ -82,13 +82,25 @@ Sobem junto com o `kubectl apply -k` (ou o `deploy-local.sh`):
 
 Decisões: [ADR 005](docs/decisoes/005-observabilidade.md).
 
+## Testes de unidade
+
+```bash
+dotnet test CampanhasAPI     # entidades, validador de CPF e domain services (61 testes)
+dotnet test DoacoesWorker    # processamento idempotente e resumo (7 testes)
+```
+
+Cobrem as regras do enunciado — data no passado, meta > 0, CPF, e-mail único,
+doação em campanha encerrada, roles — e a garantia central da mensageria: a mesma
+doação reentregue pelo broker **não é somada duas vezes**. Rodam dentro do CI.
+
 ## CI/CD
 
 [`.github/workflows/ci.yml`](.github/workflows/ci.yml) roda a cada push na `main` — **um job por microsserviço**:
 
 1. `dotnet restore` + `dotnet build -c Release` na solution do serviço
-2. build da imagem Docker (mesmo `dockerfile` usado localmente)
-3. push para o GitHub Container Registry com duas tags: o **SHA curto do commit** (imutável) e `latest`
+2. `dotnet test` — os testes de unidade do domínio (se um falhar, a imagem não é gerada)
+3. build da imagem Docker (mesmo `dockerfile` usado localmente)
+4. push para o GitHub Container Registry com duas tags: o **SHA curto do commit** (imutável) e `latest`
 
 | Imagem | Tags |
 |---|---|

@@ -7,4 +7,7 @@
     <Project Path="src/DoacoesWorker.Messaging/DoacoesWorker.Messaging.csproj" />
     <Project Path="src/DoacoesWorker.Worker/DoacoesWorker.Worker.csproj" />
   </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/DoacoesWorker.Domain.Tests/DoacoesWorker.Domain.Tests.csproj" />
+  </Folder>
 </Solution>

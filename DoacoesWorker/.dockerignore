@@ -6,3 +6,4 @@
 k8s/
 docker-compose.yml
 .git/
+tests/

@@ -6,14 +6,14 @@
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /src
 
-COPY DoacoesWorker.slnx .
+# So o csproj do host: o restore segue as ProjectReferences. A solution inclui tests/, que nao entram na imagem.
 COPY src/DoacoesWorker.Worker/DoacoesWorker.Worker.csproj           src/DoacoesWorker.Worker/
 COPY src/DoacoesWorker.Application/DoacoesWorker.Application.csproj src/DoacoesWorker.Application/
 COPY src/DoacoesWorker.Domain/DoacoesWorker.Domain.csproj           src/DoacoesWorker.Domain/
 COPY src/DoacoesWorker.Data/DoacoesWorker.Data.csproj               src/DoacoesWorker.Data/
 COPY src/DoacoesWorker.IoC/DoacoesWorker.IoC.csproj                 src/DoacoesWorker.IoC/
 COPY src/DoacoesWorker.Messaging/DoacoesWorker.Messaging.csproj     src/DoacoesWorker.Messaging/
-RUN dotnet restore DoacoesWorker.slnx
+RUN dotnet restore src/DoacoesWorker.Worker/DoacoesWorker.Worker.csproj
 
 COPY . .
 RUN dotnet publish src/DoacoesWorker.Worker/DoacoesWorker.Worker.csproj -c Release -o /app/publish --no-restore

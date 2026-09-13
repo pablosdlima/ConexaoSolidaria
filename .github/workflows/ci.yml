@@ -51,7 +51,8 @@ jobs:
       - name: Build (Release)
         run: dotnet build ${{ matrix.service.dir }}/${{ matrix.service.solution }} -c Release --no-restore
 
-      # Fase 9 (bônus): testes de unidade entram aqui, antes da imagem.
+      - name: Testes de unidade
+        run: dotnet test ${{ matrix.service.dir }}/${{ matrix.service.solution }} -c Release --no-build --logger "console;verbosity=normal"
 
       # ─── Docker ──────────────────────────────────────────────
       - name: Nome da imagem (GHCR exige minúsculas)
