@@ -1,0 +1,97 @@
+@page "/cadastro"
+@rendermode @(new InteractiveAutoRenderMode(prerender: false))
+@inject ApiClient Api
+@inject AuthService Auth
+@inject NavigationManager Nav
+
+@* RF-3: cadastro publico de doador. E-mail unico, CPF validado, senha com hash (BCrypt na API). *@
+
+<PageTitle>Criar conta - Conexao Solidaria</PageTitle>
+
+<div class="formulario-centro">
+    <h1>Criar conta de doador</h1>
+
+    <EditForm Model="modelo" OnValidSubmit="Cadastrar" FormName="cadastro">
+        <DataAnnotationsValidator />
+
+        <label>
+            Nome completo
+            <InputText @bind-Value="modelo.NomeCompleto" autocomplete="name" />
+            <ValidationMessage For="() => modelo.NomeCompleto" />
+        </label>
+
+        <label>
+            E-mail
+            <InputText @bind-Value="modelo.Email" type="email" autocomplete="email" />
+            <ValidationMessage For="() => modelo.Email" />
+        </label>
+
+        <label>
+            CPF
+            <InputText @bind-Value="modelo.Cpf" placeholder="000.000.000-00" />
+            <ValidationMessage For="() => modelo.Cpf" />
+            <span class="ajuda">A API valida os digitos verificadores.</span>
+        </label>
+
+        <label>
+            Senha
+            <InputText @bind-Value="modelo.Senha" type="password" autocomplete="new-password" />
+            <ValidationMessage For="() => modelo.Senha" />
+        </label>
+
+        @if (erro is not null)
+        {
+            <div class="alerta alerta-erro">@erro</div>
+        }
+
+        <button class="botao botao-bloco" type="submit" disabled="@enviando">
+            @(enviando ? "Cadastrando..." : "Criar conta")
+        </button>
+    </EditForm>
+
+    <p class="rodape-formulario">Ja tem conta? <a href="/login">Entrar</a>.</p>
+</div>
+
+@code {
+    private readonly CadastroModelo modelo = new();
+    private string? erro;
+    private bool enviando;
+
+    private async Task Cadastrar()
+    {
+        enviando = true;
+        erro = null;
+
+        var r = await Api.CadastrarDoadorAsync(
+            new CadastrarDoadorRequest(modelo.NomeCompleto, modelo.Email, modelo.Cpf, modelo.Senha));
+
+        if (!r.Sucesso)
+        {
+            erro = r.Erro;
+            enviando = false;
+            return;
+        }
+
+        // Cadastrou: ja entra, para o usuario nao digitar a senha de novo.
+        var login = await Auth.LoginAsync(modelo.Email, modelo.Senha);
+        Nav.NavigateTo(login.Sucesso ? "/" : "/login");
+    }
+
+    private sealed class CadastroModelo
+    {
+        [System.ComponentModel.DataAnnotations.Required(ErrorMessage = "Informe o nome completo.")]
+        [System.ComponentModel.DataAnnotations.StringLength(200)]
+        public string NomeCompleto { get; set; } = "";
+
+        [System.ComponentModel.DataAnnotations.Required(ErrorMessage = "Informe o e-mail.")]
+        [System.ComponentModel.DataAnnotations.EmailAddress(ErrorMessage = "E-mail invalido.")]
+        public string Email { get; set; } = "";
+
+        [System.ComponentModel.DataAnnotations.Required(ErrorMessage = "Informe o CPF.")]
+        public string Cpf { get; set; } = "";
+
+        [System.ComponentModel.DataAnnotations.Required(ErrorMessage = "Informe a senha.")]
+        [System.ComponentModel.DataAnnotations.MinLength(8, ErrorMessage = "A senha deve ter ao menos 8 caracteres.")]
+        public string Senha { get; set; } = "";
+    }
+}

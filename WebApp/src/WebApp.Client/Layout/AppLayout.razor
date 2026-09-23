@@ -1,0 +1,63 @@
+@inherits LayoutComponentBase
+@inject AuthService Auth
+@inject NavigationManager Nav
+
+<div class="app">
+    <header class="topo">
+        <a class="marca" href="/">
+            <span class="marca-nome">Conexao Solidaria</span>
+            <span class="marca-ong">ONG Esperanca Solidaria</span>
+        </a>
+
+        <nav class="menu">
+            <NavLink href="/" Match="NavLinkMatch.All">Transparencia</NavLink>
+
+            @* O menu reage a role que veio dentro do JWT. A API valida de novo — isto e so interface. *@
+            <AuthorizeView Roles="GestorONG">
+                <NavLink href="/campanhas">Campanhas</NavLink>
+            </AuthorizeView>
+
+            <AuthorizeView Roles="Doador">
+                <NavLink href="/minhas-doacoes">Minhas doacoes</NavLink>
+            </AuthorizeView>
+        </nav>
+
+        <div class="sessao">
+            <AuthorizeView>
+                <Authorized>
+                    <span class="usuario">
+                        @context.User.Identity?.Name
+                        <span class="papel">@context.User.FindFirst("role")?.Value</span>
+                    </span>
+                    <button class="botao-texto" @onclick="Sair">Sair</button>
+                </Authorized>
+                <NotAuthorized>
+                    <a class="botao-texto" href="/cadastro">Criar conta</a>
+                    <a class="botao" href="/login">Entrar</a>
+                </NotAuthorized>
+            </AuthorizeView>
+        </div>
+    </header>
+
+    <main class="conteudo">
+        @Body
+    </main>
+
+    <footer class="rodape">
+        Hackathon 11NETT &middot; front-end experimental, fora do escopo do MVP entregue
+    </footer>
+</div>
+
+<div id="blazor-error-ui" data-nosnippet>
+    Ocorreu um erro inesperado.
+    <a href="." class="reload">Recarregar</a>
+    <span class="dismiss">X</span>
+</div>
+
+@code {
+    private async Task Sair()
+    {
+        await Auth.LogoutAsync();
+        Nav.NavigateTo("/");
+    }
+}

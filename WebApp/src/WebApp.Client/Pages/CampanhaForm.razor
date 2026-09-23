@@ -1,0 +1,145 @@
+@page "/campanhas/nova"
+@page "/campanhas/{Id:guid}"
+@rendermode @(new InteractiveAutoRenderMode(prerender: false))
+@attribute [Authorize(Roles = "GestorONG")]
+@inject ApiClient Api
+@inject NavigationManager Nav
+
+@* Duas rotas, um componente: criar e editar mudam so o verbo HTTP.
+   As regras (data no passado, meta > 0) sao validadas na entidade Campanha, na API;
+   as validacoes aqui sao conveniencia — evitam uma ida ao servidor para o obvio. *@
+
+<PageTitle>@(Editando ? "Editar campanha" : "Nova campanha")</PageTitle>
+
+<div class="formulario-centro">
+    <h1>@(Editando ? "Editar campanha" : "Nova campanha")</h1>
+
+    @if (carregando)
+    {
+        <p class="carregando">Carregando...</p>
+    }
+    else
+    {
+        <EditForm Model="modelo" OnValidSubmit="Salvar" FormName="campanha">
+            <DataAnnotationsValidator />
+
+            <label>
+                Titulo
+                <InputText @bind-Value="modelo.Titulo" />
+                <ValidationMessage For="() => modelo.Titulo" />
+            </label>
+
+            <label>
+                Descricao
+                <InputTextArea @bind-Value="modelo.Descricao" rows="4" />
+                <ValidationMessage For="() => modelo.Descricao" />
+            </label>
+
+            <div class="linha-dupla">
+                <label>
+                    Inicio
+                    <InputDate @bind-Value="modelo.DataInicio" />
+                    <ValidationMessage For="() => modelo.DataInicio" />
+                </label>
+
+                <label>
+                    Termino
+                    <InputDate @bind-Value="modelo.DataFim" />
+                    <ValidationMessage For="() => modelo.DataFim" />
+                    <span class="ajuda">Nao pode estar no passado.</span>
+                </label>
+            </div>
+
+            <label>
+                Meta financeira (R$)
+                <InputNumber @bind-Value="modelo.MetaFinanceira" step="0.01" />
+                <ValidationMessage For="() => modelo.MetaFinanceira" />
+            </label>
+
+            @if (erro is not null)
+            {
+                <div class="alerta alerta-erro">@erro</div>
+            }
+
+            <div class="linha-dupla">
+                <a class="botao-texto" href="/campanhas">Cancelar</a>
+                <button class="botao" type="submit" disabled="@enviando">
+                    @(enviando ? "Salvando..." : "Salvar")
+                </button>
+            </div>
+        </EditForm>
+    }
+</div>
+
+@code {
+    [Parameter] public Guid? Id { get; set; }
+
+    private bool Editando => Id is not null;
+
+    private readonly CampanhaModelo modelo = new();
+    private string? erro;
+    private bool enviando;
+    private bool carregando;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (!Editando) return;
+
+        carregando = true;
+        var r = await Api.ObterCampanhaAsync(Id!.Value);
+
+        if (r.Sucesso && r.Dados is not null)
+        {
+            modelo.Titulo = r.Dados.Titulo;
+            modelo.Descricao = r.Dados.Descricao;
+            modelo.DataInicio = r.Dados.DataInicio.LocalDateTime.Date;
+            modelo.DataFim = r.Dados.DataFim.LocalDateTime.Date;
+            modelo.MetaFinanceira = r.Dados.MetaFinanceira;
+        }
+        else
+        {
+            erro = r.Erro;
+        }
+
+        carregando = false;
+    }
+
+    private async Task Salvar()
+    {
+        enviando = true;
+        erro = null;
+
+        // DataFim no fim do dia: senao uma campanha que termina hoje ja nasceria vencida.
+        var req = new CampanhaRequest(
+            modelo.Titulo,
+            modelo.Descricao,
+            new DateTimeOffset(modelo.DataInicio, TimeSpan.Zero),
+            new DateTimeOffset(modelo.DataFim.AddDays(1).AddSeconds(-1), TimeSpan.Zero),
+            modelo.MetaFinanceira);
+
+        var r = Editando
+            ? await Api.EditarCampanhaAsync(Id!.Value, req)
+            : await Api.CriarCampanhaAsync(req);
+
+        if (r.Sucesso) Nav.NavigateTo("/campanhas");
+        else { erro = r.Erro; enviando = false; }
+    }
+
+    private sealed class CampanhaModelo
+    {
+        [System.ComponentModel.DataAnnotations.Required(ErrorMessage = "Informe o titulo.")]
+        [System.ComponentModel.DataAnnotations.StringLength(200)]
+        public string Titulo { get; set; } = "";
+
+        [System.ComponentModel.DataAnnotations.Required(ErrorMessage = "Informe a descricao.")]
+        [System.ComponentModel.DataAnnotations.StringLength(2000)]
+        public string Descricao { get; set; } = "";
+
+        public DateTime DataInicio { get; set; } = DateTime.Today;
+
+        public DateTime DataFim { get; set; } = DateTime.Today.AddMonths(3);
+
+        [System.ComponentModel.DataAnnotations.Range(0.01, 100_000_000, ErrorMessage = "A meta deve ser maior que zero.")]
+        public decimal MetaFinanceira { get; set; } = 1000m;
+    }
+}

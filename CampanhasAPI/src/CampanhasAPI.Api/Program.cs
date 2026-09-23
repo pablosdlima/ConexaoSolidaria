@@ -18,6 +18,7 @@ builder.Services.AddDomainServices();
 builder.Services.AddApplicationServices(builder.Configuration);
 builder.Services.AddRabbitMQMessaging(builder.Configuration);
 builder.Services.AddObservability();
+builder.Services.AddCorsParaFront(builder.Configuration);
 
 var app = builder.Build();
 
@@ -34,6 +35,7 @@ catch (Exception ex)
 }
 
 app.UseSerilogRequestLoggingConfiguration();
+app.UseCorsParaFront();   // antes de Authentication: o preflight OPTIONS chega sem token
 app.UseSwaggerDocumentation(); // sempre ligado: e a interface da demo
 app.UseMiddleware<ExceptionHandlingMiddleware>();
 app.UseAuthentication();

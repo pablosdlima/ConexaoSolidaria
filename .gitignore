@@ -486,3 +486,7 @@ $RECYCLE.BIN/
 
 # overlay gerado pelo deploy-local.sh
 Orchestration/k8s-local/
+
+# front experimental (branch feature/blazor)
+WebApp/**/bin/
+WebApp/**/obj/

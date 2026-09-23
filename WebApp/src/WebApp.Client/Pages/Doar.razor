@@ -1,0 +1,109 @@
+@page "/doar/{IdCampanha:guid}"
+@rendermode @(new InteractiveAutoRenderMode(prerender: false))
+@attribute [Authorize(Roles = "Doador")]
+@inject ApiClient Api
+
+@* RF-5: doacao. A API responde 202 Accepted e publica o evento; quem soma o valor
+   e o DoacoesWorker, do outro lado da fila. Por isso a tela fala em "processando". *@
+
+<PageTitle>Doar - Conexao Solidaria</PageTitle>
+
+<div class="formulario-centro">
+    <h1>Fazer uma doacao</h1>
+
+    @if (campanha is not null)
+    {
+        <div class="resumo-campanha">
+            <strong>@campanha.Titulo</strong>
+            <span>@Moeda(campanha.ValorTotalArrecadado) de @Moeda(campanha.MetaFinanceira)</span>
+        </div>
+    }
+
+    @if (doacaoFeita is null)
+    {
+        <EditForm Model="modelo" OnValidSubmit="Confirmar" FormName="doacao">
+            <DataAnnotationsValidator />
+
+            <label>
+                Valor da doacao (R$)
+                <InputNumber @bind-Value="modelo.Valor" step="0.01" min="0.01" />
+                <ValidationMessage For="() => modelo.Valor" />
+            </label>
+
+            <div class="valores-rapidos">
+                @foreach (var v in new[] { 25m, 50m, 100m, 250m })
+                {
+                    <button type="button" class="botao-texto" @onclick="() => modelo.Valor = v">@Moeda(v)</button>
+                }
+            </div>
+
+            @if (erro is not null)
+            {
+                <div class="alerta alerta-erro">@erro</div>
+            }
+
+            <button class="botao botao-bloco" type="submit" disabled="@enviando">
+                @(enviando ? "Enviando..." : "Confirmar doacao")
+            </button>
+        </EditForm>
+    }
+    else
+    {
+        <div class="alerta alerta-sucesso">
+            <strong>Doacao de @Moeda(doacaoFeita.Valor) recebida.</strong>
+            <p>
+                A API respondeu <code>202 Accepted</code>: o evento foi publicado na fila e o
+                Worker vai somar o valor na campanha em instantes.
+            </p>
+            <p class="dica">Status registrado: <code>@doacaoFeita.Status</code></p>
+        </div>
+
+        <button class="botao-texto" @onclick="AtualizarCampanha" disabled="@carregando">
+            @(carregando ? "Consultando..." : "Ver o valor atualizado no painel")
+        </button>
+
+        <a class="botao botao-bloco" href="/minhas-doacoes">Minhas doacoes</a>
+    }
+</div>
+
+@code {
+    [Parameter] public Guid IdCampanha { get; set; }
+
+    private readonly DoacaoModelo modelo = new();
+    private CampanhaPublicaResponse? campanha;
+    private DoacaoResponse? doacaoFeita;
+    private string? erro;
+    private bool enviando;
+    private bool carregando;
+
+    protected override Task OnInitializedAsync() => AtualizarCampanha();
+
+    private async Task AtualizarCampanha()
+    {
+        carregando = true;
+        var r = await Api.PainelPublicoAsync();
+        campanha = r.Dados?.FirstOrDefault(c => c.IdCampanha == IdCampanha);
+        carregando = false;
+    }
+
+    private async Task Confirmar()
+    {
+        enviando = true;
+        erro = null;
+
+        var r = await Api.DoarAsync(new DoacaoRequest(IdCampanha, modelo.Valor));
+
+        if (r.Sucesso) doacaoFeita = r.Dados;
+        else erro = r.Erro;
+
+        enviando = false;
+    }
+
+    private static string Moeda(decimal v) => v.ToString("C", new CultureInfo("pt-BR"));
+
+    private sealed class DoacaoModelo
+    {
+        [System.ComponentModel.DataAnnotations.Range(0.01, 1_000_000, ErrorMessage = "O valor deve ser maior que zero.")]
+        public decimal Valor { get; set; } = 50m;
+    }
+}

@@ -1,0 +1,76 @@
+@page "/minhas-doacoes"
+@rendermode @(new InteractiveAutoRenderMode(prerender: false))
+@attribute [Authorize(Roles = "Doador")]
+@inject ApiClient Api
+
+<PageTitle>Minhas doacoes - Conexao Solidaria</PageTitle>
+
+<div class="cabecalho-pagina">
+    <h1>Minhas doacoes</h1>
+    <button class="botao-texto" @onclick="Carregar" disabled="@carregando">Atualizar</button>
+</div>
+
+@if (carregando && doacoes is null)
+{
+    <p class="carregando">Carregando...</p>
+}
+else if (erro is not null)
+{
+    <div class="alerta alerta-erro">@erro</div>
+}
+else if (doacoes is { Count: 0 })
+{
+    <div class="vazio">
+        <p>Voce ainda nao fez doacoes.</p>
+        <a class="botao" href="/">Ver campanhas ativas</a>
+    </div>
+}
+else if (doacoes is not null)
+{
+    <table class="tabela">
+        <thead>
+            <tr>
+                <th>Data</th>
+                <th class="numero">Valor</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var d in doacoes)
+            {
+                <tr>
+                    <td>@d.DataHora.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</td>
+                    <td class="numero">@Moeda(d.Valor)</td>
+                    <td><span class="etiqueta">@d.Status</span></td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    <p class="dica">
+        <strong>Publicada</strong> significa que o evento foi para a fila. A soma na campanha
+        e feita pelo Worker — confira no <a href="/">painel de transparencia</a>.
+    </p>
+}
+
+@code {
+    private List<DoacaoResponse>? doacoes;
+    private string? erro;
+    private bool carregando;
+
+    protected override Task OnInitializedAsync() => Carregar();
+
+    private async Task Carregar()
+    {
+        carregando = true;
+        erro = null;
+
+        var r = await Api.MinhasDoacoesAsync();
+        if (r.Sucesso) doacoes = r.Dados;
+        else erro = r.Erro;
+
+        carregando = false;
+    }
+
+    private static string Moeda(decimal v) => v.ToString("C", new CultureInfo("pt-BR"));
+}

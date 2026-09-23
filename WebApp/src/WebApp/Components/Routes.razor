@@ -1,0 +1,26 @@
+@using Microsoft.AspNetCore.Components.Authorization
+@using WebApp.Client.Layout
+
+@* CascadingAuthenticationState leva o usuario logado para toda a arvore de componentes,
+   para <AuthorizeView> e [Authorize] funcionarem em qualquer pagina. *@
+<CascadingAuthenticationState>
+    <Router AppAssembly="typeof(Program).Assembly"
+            AdditionalAssemblies="new[] { typeof(Client._Imports).Assembly }"
+            NotFoundPage="typeof(Pages.NotFound)">
+        <Found Context="routeData">
+            @* AuthorizeRouteView: paginas com [Authorize] mostram o aviso abaixo quando nao ha sessao. *@
+            <AuthorizeRouteView RouteData="routeData" DefaultLayout="typeof(AppLayout)">
+                <NotAuthorized>
+                    <div class="aviso">
+                        <p>Voce precisa entrar para acessar esta pagina.</p>
+                        <a class="botao" href="/login">Entrar</a>
+                    </div>
+                </NotAuthorized>
+                <Authorizing>
+                    <p class="carregando">Verificando sessao...</p>
+                </Authorizing>
+            </AuthorizeRouteView>
+            <FocusOnNavigate RouteData="routeData" Selector="h1" />
+        </Found>
+    </Router>
+</CascadingAuthenticationState>

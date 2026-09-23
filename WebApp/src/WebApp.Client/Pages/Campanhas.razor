@@ -1,0 +1,112 @@
+@page "/campanhas"
+@rendermode @(new InteractiveAutoRenderMode(prerender: false))
+@attribute [Authorize(Roles = "GestorONG")]
+@inject ApiClient Api
+
+@* RF-2: gestao de campanhas. So GestorONG — a API devolve 403 para um Doador,
+   e o [Authorize] aqui evita a viagem inutil. *@
+
+<PageTitle>Campanhas - Conexao Solidaria</PageTitle>
+
+<div class="cabecalho-pagina">
+    <div>
+        <h1>Campanhas</h1>
+        <p class="subtitulo">Criar, editar, concluir ou cancelar campanhas de arrecadacao.</p>
+    </div>
+    <a class="botao" href="/campanhas/nova">Nova campanha</a>
+</div>
+
+@if (carregando && campanhas is null)
+{
+    <p class="carregando">Carregando...</p>
+}
+else if (erro is not null)
+{
+    <div class="alerta alerta-erro">@erro</div>
+}
+else if (campanhas is { Count: 0 })
+{
+    <div class="vazio">
+        <p>Nenhuma campanha cadastrada.</p>
+        <a class="botao" href="/campanhas/nova">Criar a primeira</a>
+    </div>
+}
+else if (campanhas is not null)
+{
+    <table class="tabela">
+        <thead>
+            <tr>
+                <th>Titulo</th>
+                <th class="numero">Meta</th>
+                <th>Periodo</th>
+                <th>Status</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var c in campanhas)
+            {
+                <tr>
+                    <td><strong>@c.Titulo</strong></td>
+                    <td class="numero">@Moeda(c.MetaFinanceira)</td>
+                    <td class="discreto">
+                        @c.DataInicio.ToLocalTime().ToString("dd/MM/yy") - @c.DataFim.ToLocalTime().ToString("dd/MM/yy")
+                    </td>
+                    <td><span class="etiqueta etiqueta-@c.Status.ToLowerInvariant()">@c.Status</span></td>
+                    <td class="acoes">
+                        @if (c.Status == "Ativa")
+                        {
+                            <a class="botao-texto" href="@($"/campanhas/{c.Id}")">Editar</a>
+                            <button class="botao-texto" @onclick="() => AlterarStatus(c, Concluida)">Concluir</button>
+                            <button class="botao-texto perigo" @onclick="() => AlterarStatus(c, Cancelada)">Cancelar</button>
+                        }
+                        else
+                        {
+                            <span class="discreto">sem acoes</span>
+                        }
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@if (aviso is not null)
+{
+    <div class="alerta alerta-erro">@aviso</div>
+}
+
+@code {
+    private const string Concluida = "Concluida";
+    private const string Cancelada = "Cancelada";
+
+    private List<CampanhaResponse>? campanhas;
+    private string? erro;
+    private string? aviso;
+    private bool carregando;
+
+    protected override Task OnInitializedAsync() => Carregar();
+
+    private async Task Carregar()
+    {
+        carregando = true;
+        erro = null;
+
+        var r = await Api.ListarCampanhasAsync();
+        if (r.Sucesso) campanhas = r.Dados;
+        else erro = r.Erro;
+
+        carregando = false;
+    }
+
+    private async Task AlterarStatus(CampanhaResponse campanha, string status)
+    {
+        aviso = null;
+
+        var r = await Api.AlterarStatusAsync(campanha.Id, status);
+        if (r.Sucesso) await Carregar();
+        else aviso = r.Erro;   // ex.: "Campanha Concluida nao pode mudar para Cancelada"
+    }
+
+    private static string Moeda(decimal v) => v.ToString("C", new CultureInfo("pt-BR"));
+}

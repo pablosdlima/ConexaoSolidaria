@@ -14,6 +14,15 @@ builder.Configuration
 builder.Services.AddOcelot(builder.Configuration);
 builder.Services.AddHealthChecks();
 
+// O front Blazor chama o gateway, entao o CORS precisa estar AQUI. O preflight OPTIONS
+// nao consta nas rotas do ocelot.json — sem este middleware ele viraria 404.
+var origensFront = builder.Configuration.GetSection("Cors:Origens").Get<string[]>() ?? [];
+builder.Services.AddCors(o => o.AddPolicy("front", p =>
+{
+    if (origensFront.Length == 0) return;
+    p.WithOrigins(origensFront).AllowAnyHeader().AllowAnyMethod();
+}));
+
 // Forca bruta no login: 10 tentativas por minuto por IP. As demais rotas nao sao limitadas.
 builder.Services.AddRateLimiter(o =>
 {
@@ -28,6 +37,7 @@ builder.Services.AddRateLimiter(o =>
 
 var app = builder.Build();
 
+app.UseCors("front");
 app.UseRateLimiter();
 
 app.MapHealthChecks("/health");

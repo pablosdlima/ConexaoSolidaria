@@ -1,0 +1,102 @@
+@page "/"
+@rendermode @(new InteractiveAutoRenderMode(prerender: false))
+@inject ApiClient Api
+
+@* Painel de transparencia (RF-4). Publico: nao exige login.
+   Os dados vem do DoacoesWorker — ele e o dono do valor arrecadado (ADR 003).
+
+   prerender: false porque o componente le o localStorage (via ApiClient) e faz
+   HTTP do navegador; renderizar antes no servidor mostraria uma tela que muda
+   logo em seguida. *@
+
+<PageTitle>Transparencia - Conexao Solidaria</PageTitle>
+
+<div class="cabecalho-pagina">
+    <div>
+        <h1>Painel de transparencia</h1>
+        <p class="subtitulo">
+            Campanhas ativas e quanto ja foi arrecadado. Os valores sao atualizados pelo
+            DoacoesWorker, que consome a fila de doacoes.
+        </p>
+    </div>
+    <button class="botao-texto" @onclick="Carregar" disabled="@carregando">
+        @(carregando ? "Atualizando..." : "Atualizar")
+    </button>
+</div>
+
+@if (carregando && campanhas is null)
+{
+    <p class="carregando">Carregando campanhas...</p>
+}
+else if (erro is not null)
+{
+    <div class="alerta alerta-erro">@erro</div>
+}
+else if (campanhas is { Count: 0 })
+{
+    <div class="vazio">
+        <p>Nenhuma campanha ativa no momento.</p>
+        <p class="dica">Um GestorONG pode criar campanhas em <a href="/campanhas">Campanhas</a>.</p>
+    </div>
+}
+else if (campanhas is not null)
+{
+    <div class="grade">
+        @foreach (var c in campanhas)
+        {
+            <article class="cartao">
+                <h2>@c.Titulo</h2>
+
+                <div class="barra" role="progressbar" aria-valuenow="@((double)c.PercentualAtingido)" aria-valuemin="0" aria-valuemax="100">
+                    <div class="barra-preenchida" style="width:@(Math.Min(100, (double)c.PercentualAtingido).ToString(CultureInfo.InvariantCulture))%"></div>
+                </div>
+
+                <div class="valores">
+                    <div>
+                        <span class="rotulo">Arrecadado</span>
+                        <strong class="destaque">@Moeda(c.ValorTotalArrecadado)</strong>
+                    </div>
+                    <div>
+                        <span class="rotulo">Meta</span>
+                        <strong>@Moeda(c.MetaFinanceira)</strong>
+                    </div>
+                    <div>
+                        <span class="rotulo">Doacoes</span>
+                        <strong>@c.QuantidadeDoacoes</strong>
+                    </div>
+                </div>
+
+                <footer class="cartao-rodape">
+                    <span>@c.PercentualAtingido.ToString("0.##")% da meta</span>
+                    <span>ate @c.DataFim.ToLocalTime().ToString("dd/MM/yyyy")</span>
+                </footer>
+
+                <AuthorizeView Roles="Doador">
+                    <a class="botao botao-bloco" href="@($"/doar/{c.IdCampanha}")">Doar para esta campanha</a>
+                </AuthorizeView>
+            </article>
+        }
+    </div>
+}
+
+@code {
+    private List<CampanhaPublicaResponse>? campanhas;
+    private string? erro;
+    private bool carregando;
+
+    protected override Task OnInitializedAsync() => Carregar();
+
+    private async Task Carregar()
+    {
+        carregando = true;
+        erro = null;
+
+        var r = await Api.PainelPublicoAsync();
+        if (r.Sucesso) campanhas = r.Dados;
+        else erro = r.Erro;
+
+        carregando = false;
+    }
+
+    private static string Moeda(decimal v) => v.ToString("C", new CultureInfo("pt-BR"));
+}
