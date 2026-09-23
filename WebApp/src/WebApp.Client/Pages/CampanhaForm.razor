@@ -1,6 +1,5 @@
 @page "/campanhas/nova"
 @page "/campanhas/{Id:guid}"
-@rendermode @(new InteractiveAutoRenderMode(prerender: false))
 @attribute [Authorize(Roles = "GestorONG")]
 @inject ApiClient Api
 @inject NavigationManager Nav

@@ -1,5 +1,7 @@
 @inherits LayoutComponentBase
 @inject AuthService Auth
+@inject TokenStore Tokens
+@inject JwtAuthenticationStateProvider AuthProvider
 @inject NavigationManager Nav
 
 <div class="app">
@@ -55,6 +57,18 @@
 </div>
 
 @code {
+    /// <summary>
+    /// Modo Auto: o primeiro render acontece no servidor, sem acesso ao localStorage.
+    /// Assim que o navegador assume, relemos o token e a interface se corrige.
+    /// </summary>
+    protected override async Task OnAfterRenderAsync(bool primeiroRender)
+    {
+        if (primeiroRender && Tokens.LeituraAdiada)
+            AuthProvider.NotificarMudanca();
+
+        await base.OnAfterRenderAsync(primeiroRender);
+    }
+
     private async Task Sair()
     {
         await Auth.LogoutAsync();
