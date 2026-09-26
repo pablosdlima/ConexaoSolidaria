@@ -1,19 +1,28 @@
-@using Microsoft.AspNetCore.Components.Authorization
-@using WebApp.Client.Layout
+@* Fica no projeto .Client, e nao no host: com interatividade GLOBAL (App.razor) este e o
+   componente raiz, e o WebAssembly so recebe o assembly WebApp.Client. No host, o primeiro
+   acesso (servidor) funciona, mas quando o navegador assume da
+   "Root component type 'WebApp.Components.Routes' could not be found". *@
 
 @* CascadingAuthenticationState leva o usuario logado para toda a arvore de componentes,
    para <AuthorizeView> e [Authorize] funcionarem em qualquer pagina. *@
 <CascadingAuthenticationState>
     <Router AppAssembly="typeof(Program).Assembly"
-            AdditionalAssemblies="new[] { typeof(Client._Imports).Assembly }"
             NotFoundPage="typeof(Pages.NotFound)">
         <Found Context="routeData">
             @* AuthorizeRouteView: paginas com [Authorize] mostram o aviso abaixo quando nao ha sessao. *@
             <AuthorizeRouteView RouteData="routeData" DefaultLayout="typeof(AppLayout)">
                 <NotAuthorized>
                     <div class="aviso">
-                        <p>Voce precisa entrar para acessar esta pagina.</p>
-                        <a class="botao" href="/login">Entrar</a>
+                        @if (context.User.Identity?.IsAuthenticated == true)
+                        {
+                            <p>Esta pagina nao esta disponivel para o seu perfil.</p>
+                            <a class="botao" href="/">Voltar ao painel</a>
+                        }
+                        else
+                        {
+                            <p>Voce precisa entrar para acessar esta pagina.</p>
+                            <a class="botao" href="/login">Entrar</a>
+                        }
                     </div>
                 </NotAuthorized>
                 <Authorizing>

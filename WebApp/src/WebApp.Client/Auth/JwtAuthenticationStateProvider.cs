@@ -38,7 +38,8 @@ public class JwtAuthenticationStateProvider(TokenStore tokens) : AuthenticationS
             return Anonimo;
         }
 
-        var identity = new ClaimsIdentity(claims, "jwt", ClaimTypes.Name, "role");
+        // Nomes curtos, como vem no JWT ("name", "role") — nao os URIs de ClaimTypes.
+        var identity = new ClaimsIdentity(claims, "jwt", "name", "role");
         return new AuthenticationState(new ClaimsPrincipal(identity));
     }
 

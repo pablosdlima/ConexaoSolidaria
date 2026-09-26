@@ -1,0 +1,19 @@
+# Contexto de build: a pasta WebApp/
+FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
+WORKDIR /src
+COPY src/WebApp/WebApp.csproj src/WebApp/
+COPY src/WebApp.Client/WebApp.Client.csproj src/WebApp.Client/
+RUN dotnet restore src/WebApp/WebApp.csproj
+COPY . .
+# SEM --no-restore, ao contrario dos outros servicos: o SDK so inclui o pacote que traz
+# o _framework/blazor.web.js quando enxerga os .razor — e no restore acima eles ainda
+# nao foram copiados. Sem isto o front abre, mas sem interatividade (botoes mortos).
+RUN dotnet publish src/WebApp/WebApp.csproj -c Release -o /app/publish
+
+FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS final
+WORKDIR /app
+COPY --from=build /app/publish .
+ENV ASPNETCORE_URLS=http://+:8080
+EXPOSE 8080
+USER app
+ENTRYPOINT ["dotnet", "WebApp.dll"]

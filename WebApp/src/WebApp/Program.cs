@@ -25,6 +25,11 @@ app.MapStaticAssets();
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode()
     .AddInteractiveWebAssemblyRenderMode()
-    .AddAdditionalAssemblies(typeof(WebApp.Client._Imports).Assembly);
+    .AddAdditionalAssemblies(typeof(WebApp.Client._Imports).Assembly)
+    // O JWT vive no localStorage: o servidor nunca sabe quem esta logado. Sem isto, abrir
+    // uma pagina com [Authorize] pela URL (ou F5) da 500 — o middleware de autorizacao tenta
+    // um challenge sem esquema de autenticacao. Quem decide e o AuthorizeRouteView
+    // (interface) e, de verdade, a API (401/403).
+    .AllowAnonymous();
 
 app.Run();

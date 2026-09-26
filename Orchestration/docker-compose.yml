@@ -3,6 +3,7 @@
 #
 #   docker compose up -d                  → só a infraestrutura
 #   docker compose --profile app up -d    → infraestrutura + API + Worker (a partir da Fase 5)
+#   docker compose --profile app --profile front up -d → + front Blazor (experimental, :5100)
 #
 #   API Gateway:   http://localhost:5000  (entrada unica: /api/...)
 #   CampanhasAPI:  http://localhost:5001/swagger
@@ -133,6 +134,29 @@ services:
     depends_on:
       - campanhas-api
       - doacoes-worker
+
+  # ─── FRONT EXPERIMENTAL (fora do escopo do MVP) ───────────
+  # docker compose --profile app --profile front up -d --build  → http://localhost:5100
+
+  webapp:
+    profiles: ["front"]
+    build:
+      context: ../WebApp
+      dockerfile: dockerfile
+    image: conexao-solidaria/webapp:${IMAGE_TAG:-local}
+    container_name: webapp
+    restart: unless-stopped
+    ports:
+      - "5100:5100"
+    environment:
+      ASPNETCORE_URLS: http://+:5100
+      ASPNETCORE_ENVIRONMENT: Production
+      # Modo Auto: o 1º acesso roda NO SERVIDOR (dentro do container), onde localhost
+      # é o próprio container. O WebAssembly no navegador segue usando
+      # wwwroot/appsettings.json → http://localhost:5000.
+      Api__BaseUrl: http://api-gateway:5000
+    depends_on:
+      - api-gateway
 
 volumes:
   postgres-data:
